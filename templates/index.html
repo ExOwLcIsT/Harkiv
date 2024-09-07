@@ -21,6 +21,7 @@
             <li><a href="profile" class="nav-link">Профіль</a></li>
             <li><a href="collections" class="nav-link">Управління</a></li>
             <li><a href="users" class="nav-link">Користувачі</a></li>
+            <li><a href="statistics" class="nav-link">Статистика</a></li>
         </ul>
     </nav>
     <div id="login">
@@ -147,9 +148,26 @@
                 </div>
                 <p>${element.description}</p>
                 <div class="price">$${element.price}</div>
-                <button>View Details</button>
+                <button onClick='createOrder("${element._id}")'>Придбати</button>
             </div>
         </div>`);
+            });
+        }
+
+        function createOrder(id) {
+            $.ajax({
+                url: '/api/orders',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    car_id: id
+                }),
+                success: function (response) {
+                    alert('Order placed successfully!');
+                },
+                error: function (xhr) {
+                    alert('Failed to place order: ' + xhr.responseText);
+                }
             });
         }
 
@@ -199,7 +217,7 @@
                         document.cookie = `username=${response.login}; path=/;`;
                         $("#logout").css("visibility", "visible");
                         $("#showlog").css("visibility", "hidden");
-                        $("#login").css('visibility', 'hiiden');
+                        $("#login").css('visibility', 'hidden ');
                     } else {
                         alert(response.message);
                     }

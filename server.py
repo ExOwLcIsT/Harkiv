@@ -3,6 +3,7 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from werkzeug.utils import secure_filename
 from functools import wraps
+import datetime
 import os
 app = Flask(__name__)
 
@@ -68,6 +69,11 @@ def get_profile_page():
         "profile.html"
     )
 
+@app.route('/statistics', methods=['GET'])
+def get_statistics_page():
+    return render_template(  
+        "statistics.html"   
+    )
 
 @role_required("owner", "admin")
 @app.route('/api/users', methods=['GET'])
@@ -132,7 +138,7 @@ def signup():
     
     if photo and allowed_file(photo.filename):
         filename = secure_filename(photo.filename)
-        photo_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        photo_path = os.path.join('static/images/dealers', filename)
         photo.save(photo_path)
     else:
         return jsonify({"success": False, "message": "Invalid photo format."}), 400
@@ -157,7 +163,8 @@ def signup():
 
 @app.route('/api/cars', methods=['GET'])
 def get_cars():
-    cars = list(cars_collection.find({}))
+    print(get_current_user())
+    cars = list(cars_collection.find({"sold": False, "dealer": {"$ne": get_current_user()["login"]}}))
     for car in cars:
         car['_id'] = str(car['_id'])
     return jsonify(cars)
@@ -194,7 +201,8 @@ def add_car():
         'price': price,
         'image': file_path,  
         'description': notes,
-        'dealer': dealer
+        'dealer': dealer,
+        'sold': False
     }
 
     cars_collection.insert_one(car_data)
@@ -308,6 +316,94 @@ def delete_collections(name):
     return jsonify(collection_names), 200
 
 
+@app.route('/api/orders', methods=['POST'])
+def create_order():
+    if 'username' not in request.cookies:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_login = request.cookies.get('username')
+    user = users_collection.find_one({"login": user_login})
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    data = request.json
+    car_id = data.get('car_id')
+    comment = data.get('comment')
+
+    car = cars_collection.find_one({"_id": ObjectId(car_id)})
+    if not car:
+        return jsonify({"error": "Car not found"}), 404
+
+    dealer = users_collection.find_one({"login": car.get('dealer')})
+
+    contract_data = {
+        "contract_code": str(ObjectId()),
+        "client_id": user['_id'],
+        "dealer_id": dealer.get("_id"),
+        "contract_date": datetime.datetime.now().isoformat(),
+        "car_brand": car['brand'],
+        "car_image": car['image'],
+        "car_year": car['year'],
+        "car_mileage": car['mileage'],
+        "sale_date": None,
+        "sale_price": car['price'],
+        "note": comment
+    }
+
+    contracts_collection.insert_one(contract_data)
+    cars_collection.update_one({"_id": ObjectId(car_id)}, {"$set": {"sold": True}})
+    dealers_collection.insert_one(dealer)
+    clients_collection.insert_one(get_current_user())
+    return jsonify({"success": True, "message": "Order placed successfully!"}), 201
+
+
+@app.route('/api/clients/all', methods=['GET'])
+def get_all_clients():
+    clients = list(clients_collection.find())
+    for client in clients:
+        client['_id'] = str(client['_id'])  # Convert ObjectId to string
+    return jsonify(clients), 200
+
+@app.route('/api/clients/multiple-purchases', methods=['GET'])
+def get_clients_with_multiple_purchases():
+    pipeline = [
+        {"$lookup": {
+            "from": "contracts",
+            "localField": "_id",
+            "foreignField": "client_id",
+            "as": "contracts"
+        }},
+        {"$match": {"contracts.1": {"$exists": True}}}  # Match clients with more than 1 contract
+    ]
+    clients = list(clients_collection.aggregate(pipeline))
+    for client in clients:
+        client['_id'] = str(client['_id'])
+    return jsonify(clients), 200
+
+@app.route('/api/dealers/top', methods=['GET'])
+def get_top_dealer():
+    pipeline = [
+        {"$group": {"_id": {"dealer": "$dealer_id", "month": {"$month": "$contract_date"}}, "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 1},
+        {"$lookup": {
+            "from": "dealers",
+            "localField": "_id.dealer",
+            "foreignField": "_id",
+            "as": "dealer_info"
+        }},
+        {"$unwind": "$dealer_info"}
+    ]
+    top_dealer = list(contracts_collection.aggregate(pipeline))
+    return jsonify(top_dealer), 200
+
+@app.route('/api/contracts/credit', methods=['GET'])
+def get_credit_contracts():
+    contracts = list(contracts_collection.find({"payment_type": "credit"}))
+    for contract in contracts:
+        contract['_id'] = str(contract['_id'])
+    return jsonify(contracts), 200
 
 
 if __name__ == '__main__':
