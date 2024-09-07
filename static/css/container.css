@@ -1,0 +1,78 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    margin-top: 30px;
+    flex-grow: 1;
+}
+
+.car-card {
+    display: flex;
+    width: 100%;
+    min-height: 240px;
+    max-width: 800px;
+    margin-bottom: 20px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.car-card img {
+    width: 40%;
+    object-fit: cover;
+    margin: 5px;
+    border-radius: 10px;
+}
+
+.car-card-content {
+    padding: 20px;
+    justify-content: space-between;
+    width: 60%;
+}
+
+.car-card-content h3, h4 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.car-card-content p {
+    margin-bottom: 8px;
+    font-size: 16px;
+    color: #666;
+}
+
+.car-card-content .price {
+    font-size: 20px;
+    font-weight: bold;
+    color: rgb(24, 193, 137);
+}
+
+.car-card-content .car-details {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.car-card-content .car-details span {
+    margin-right: 10px;
+    color: #888;
+}
+
+.car-card-content button {
+    align-self: flex-start;
+    padding: 10px 20px;
+    background-color: rgb(24, 193, 137);
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.car-card-content button:hover {
+    background-color: darken(rgb(24, 193, 137), 10%);
+}

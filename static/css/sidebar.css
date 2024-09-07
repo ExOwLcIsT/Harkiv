@@ -1,0 +1,61 @@
+.header {
+    visibility: hidden;
+}
+
+.sidebar {
+    width: 300px;
+    padding: 20px;
+    background-color: #f4f4f4;
+    border-right: 2px solid #ddd;
+    margin-left: 0px;
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100%;
+}
+
+.sidebar h2 {
+    margin-bottom: 20px;
+    font-size: 22px;
+    color: #333;
+}
+
+.sidebar label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.sidebar .filterinput {
+    width: 90%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.sidebar input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+.sidebar button {
+    width: 100%;
+    padding: 10px;
+    background-color: rgb(24, 193, 137);
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.sidebar button:hover {
+    background-color: darken(rgb(24, 193, 137), 10%);
+}
+
+
+
+#year-min,
+#year-max {
+    width: 40%;
+}

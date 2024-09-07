@@ -1,0 +1,74 @@
+#user-management {
+    margin-top: 75px auto;
+    padding: 20px;
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+#user-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+#user-table th,
+#user-table td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+#user-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+#user-table tr:hover {
+    background-color: #f1f1f1;
+}
+
+#user-table select {
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    background-color: #fff;
+}
+
+button,
+input[type="button"] {
+    padding: 8px 16px;
+    margin: 10px 0;
+    border: none;
+    background-color:  rgb(24, 193, 137);;
+    color: #fff;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover,
+input[type="button"]:hover {
+    background-color:  rgb(20, 158, 112);;
+}
+
+.alert {
+    padding: 10px;
+    margin-bottom: 15px;
+    color: #fff;
+    background-color: #4CAF50;
+    border-radius: 5px;
+    text-align: center;
+}
+
+@media screen and (max-width: 768px) {
+    #user-management {
+        width: 95%;
+    }
+
+    #user-table th,
+    #user-table td {
+        padding: 8px;
+    }
+}

@@ -1,0 +1,69 @@
+#login {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    visibility: hidden;
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+}
+.auth {
+    text-align: center;
+    position: absolute;
+    width: 500px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border: solid 2px;
+    border-color: var(--main-bg-color);
+    border-radius: 20px;
+    background-color: rgb(255, 251, 245);
+    padding: 5px;
+}
+
+
+
+.auth .forminput {
+    width: 90%;
+    height: 25px;
+}
+
+.auth * {
+    text-align: center;
+    margin: 10px auto;
+}
+
+.auth input[type="submit"],
+.auth input[type="button"] {
+    background-color: var(--main-bg-color);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.auth input[type="submit"]:hover,
+.auth input[type="button"]:hover {
+    background-color: #116a5b;
+}
+
+.log {
+    position: absolute;
+    right: 0;
+    top: 0;
+    padding: 10px;
+}
+
+#logout, #showlog {
+    width: 150px;
+    height: 25px;
+    background-color: var(--main-bg-color);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-bottom: 20px;
+}
+
+#logout:hover {
+    background-color: #116a5b;
+}

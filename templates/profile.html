@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Profile Page</title>
+    <link href="../static/css/common.css" rel="stylesheet">
+    <link href="../static/css/profile.css" rel="stylesheet">
+    <link href="../static/css/navbar.css" rel="stylesheet">
+    <link href="../static/css/forms.css" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+</head>
+
+<body>
+
+    <div id="login">
+        <form id="signupform" class="auth" onsubmit="signup()">
+            <input class="forminput" id="signupusername" placeholder="username">
+            <input class="forminput" id="signuppassword" placeholder="password">
+            <input class="forminput" id="confirmpassword" placeholder="confirm password">
+            <input class="forminput" type="submit" value="Sign up">
+            <input onclick="showloginform()" class="forminput" type="button" value="Log in">
+        </form>
+        <form id="loginform" class="auth" onsubmit="login()">
+            <input class="forminput" id="loginusername" placeholder="username">
+            <input class="forminput" id="loginpassword" placeholder="password">
+            <div class="additional"><a>forgot password?</a></div>
+            <input class="forminput" type="submit" value="Log in">
+            <input onclick="showsignupform()" class="forminput" type="button" value="Sign up">
+        </form>
+    </div>
+
+    <!-- <div class="form-container">
+        <h2>Change Password</h2>
+        <form action="/change_password" method="POST">
+            <div>
+                <label for="current_password">Current Password:</label>
+                <input type="password" id="current_password" name="current_password" required>
+            </div>
+            <div>
+                <label for="new_password">New Password:</label>
+                <input type="password" id="new_password" name="new_password" required>
+            </div>
+            <div>
+                <label for="confirm_password">Confirm New Password:</label>
+                <input type="password" id="confirm_password" name="confirm_password" required>
+            </div>
+            <button type="submit">Change Password</button>
+        </form>
+    </div> -->
+    <nav class="horizontal-navbar">
+        <a href="/" class="logo">AutoSale</a>
+        <ul class="nav-links">
+            <li><a href="/" class="nav-link">Головна</a></li>
+            <li><a href="profile" class="nav-link">Профіль</a></li>
+            <li><a href="collections" class="nav-link">Управління</a></li>
+            <li><a href="users" class="nav-link">Користувачі</a></li>
+        </ul>
+    </nav>
+    <h2 id="username"></h2>
+    <div class="form-container">
+        <h2>Add Car</h2>
+        <form onsubmit="addcar()" method="POST" enctype="multipart/form-data">
+            <div>
+                <label for="brand">Car Brand:</label>
+                <input type="text" id="brand" name="brand" required>
+            </div>
+
+            <div>
+                <label for="model">Car Model:</label>
+                <input type="text" id="model" name="model" required>
+            </div>
+
+            <div>
+                <label for="year">Year:</label>
+                <input type="number" id="year" name="year" min="1886" max="2024" required>
+            </div>
+
+            <div>
+                <label for="mileage">Mileage (km):</label>
+                <input type="number" id="mileage" name="mileage" required>
+            </div>
+
+            <div>
+                <label for="price">Price ($):</label>
+                <input type="number" id="price" name="price" step="0.01" required>
+            </div>
+
+            <div>
+                <label for="photo">Car Photo:</label>
+                <input type="file" id="photo" name="photo" accept="image/*" required>
+            </div>
+
+            <div>
+                <label for="color">Color:</label>
+                <input id="color" name="color">
+            </div>
+            <div>
+                <label for="notes">Notes:</label>
+                <textarea id="notes" name="notes" rows="4" cols="50"></textarea>
+            </div>
+            <button type="submit">Add Car</button>
+        </form>
+    </div>
+
+    <script>
+        function deleteCookie(name) {
+            document.cookie = name + '=; Max-Age=0; path=/;';
+        }
+
+        function showlogin() {
+            $("#login").css('visibility', 'visible');
+        }
+
+        function logout() {
+            deleteCookie('username');
+            alert('Ви вийшли з системи!');
+        }
+
+        function showsignupform() {
+            $("#signupform").css("visibility", "visible");
+            $("#loginform").css("visibility", "hidden");
+        }
+
+        function showloginform() {
+            $("#signupform").css("visibility", "hidden");
+            $("#loginform").css("visibility", "visible");
+        }
+
+        function signup() {
+            if ($("#signuppassword").val() == $("#confirmpassword").val()) {
+                $.ajax({
+                    async: true,
+                    url: `/authorize/signup`,
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    data: {
+                        login: $("#signupusername").val(),
+                        password: $("#signuppassword").val()
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            alert("Реєстрація успішна!");
+                            document.cookie = `user=${response.login}; path=/;`;
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function () {
+                        alert("Сталася помилка під час реєстрації!");
+                    }
+                });
+            }
+        }
+
+        function login() {
+            $.ajax({
+                async: true,
+                url: `/authorize/login`,
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                data: {
+                    login: $("#loginusername").val(),
+                    password: $("#loginpassword").val()
+                },
+                success: function (response) {
+                    if (response) {
+                        document.cookie = `username=${response.login}; path=/;`;
+                        alert("Логін успішний!");
+                    } else {
+                        alert("Невірний логін або пароль!");
+                    }
+                },
+                error: function (err) {
+                    console.error(err)
+                    alert("Сталася помилка під час авторизації!");
+                }
+            });
+        }
+        window.onload = () => {
+            if (!document.cookie.includes("username")) {
+                console.log("no")
+                showlogin();
+            } else {
+                console.log("yes");
+                $("#username").html("Welcome, " + document.cookie
+                    .split("; ")
+                    .find((row) => row.startsWith("username=")).split("=")[1]);
+            }
+        }
+
+        function addcar() {
+            event.preventDefault();
+
+            var formData = new FormData();
+
+            formData.append('brand', $('#brand').val());
+            formData.append('model', $('#model').val());
+            formData.append('year', $('#year').val());
+            formData.append('mileage', $('#mileage').val());
+            formData.append('price', $('#price').val());
+            formData.append('photo', $('#photo')[0].files[0]);
+            formData.append('notes', $('#notes').val());
+            formData.append('color', $('#color').val());
+            formData.append('dealer', document.cookie
+                .split("; ")
+                .find((row) => row.startsWith("username=")).split("=")[1]);
+            $.ajax({
+                url: '/api/cars',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    alert(response.message);
+                    $('form')[0].reset();
+                },
+                error: function (xhr, status, error) {
+                    console.log('Error adding car: ' + xhr.responseText);
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
