@@ -9,53 +9,41 @@
     <link href="../static/css/navbar.css" rel="stylesheet">
     <link href="../static/css/forms.css" rel="stylesheet">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script src="../static/js/login.js"></script>
+    <script src="../static/js/nav-links.js"></script>
 </head>
 
 <body>
 
     <div id="login">
-        <form id="signupform" class="auth" onsubmit="signup()">
-            <input class="forminput" id="signupusername" placeholder="username">
-            <input class="forminput" id="signuppassword" placeholder="password">
-            <input class="forminput" id="confirmpassword" placeholder="confirm password">
+        <form id="signupform" style="visibility: hidden;" class="auth" onsubmit="signup(event)"
+            enctype="multipart/form-data">
+            <input class="forminput" id="signupusername" name="login" placeholder="Логін" required>
+            <input class="forminput" id="signuppassword" name="password" type="password" placeholder="Пароль" required>
+            <input class="forminput" id="confirmpassword" type="password" placeholder="Підтвердити пароль" required>
+            <input class="forminput" id="name" name="name" placeholder="ПІБ" required>
+            <input class="forminput" id="city" name="city" placeholder="Місто" required>
+            <input class="forminput" id="address" name="address" placeholder="Адреса" required>
+            <input class="forminput" id="phone" name="phone" type="tel" placeholder="Номер телефону" required>
+            <br><label>Фото</label> <br>
+            <input class="forminput" id="photo" name="photo" type="file" accept="image/*">
+
             <input class="forminput" type="submit" value="Sign up">
             <input onclick="showloginform()" class="forminput" type="button" value="Log in">
         </form>
         <form id="loginform" class="auth" onsubmit="login()">
-            <input class="forminput" id="loginusername" placeholder="username">
-            <input class="forminput" id="loginpassword" placeholder="password">
-            <div class="additional"><a>forgot password?</a></div>
+            <input class="forminput" id="loginusername" placeholder="username" required>
+            <input class="forminput" id="loginpassword" placeholder="password" type="password" required>
+            <div class="additional"><button onclick="forgotPassword()">forgot password?</button></div>
+            <h4 id="forgottenPassword"></h4>
             <input class="forminput" type="submit" value="Log in">
             <input onclick="showsignupform()" class="forminput" type="button" value="Sign up">
         </form>
     </div>
-
-    <!-- <div class="form-container">
-        <h2>Change Password</h2>
-        <form action="/change_password" method="POST">
-            <div>
-                <label for="current_password">Current Password:</label>
-                <input type="password" id="current_password" name="current_password" required>
-            </div>
-            <div>
-                <label for="new_password">New Password:</label>
-                <input type="password" id="new_password" name="new_password" required>
-            </div>
-            <div>
-                <label for="confirm_password">Confirm New Password:</label>
-                <input type="password" id="confirm_password" name="confirm_password" required>
-            </div>
-            <button type="submit">Change Password</button>
-        </form>
-    </div> -->
     <nav class="horizontal-navbar">
         <a href="/" class="logo">AutoSale</a>
-        <ul class="nav-links">
-            <li><a href="/" class="nav-link">Головна</a></li>
-            <li><a href="profile" class="nav-link">Профіль</a></li>
-            <li><a href="collections" class="nav-link">Управління</a></li>
-            <li><a href="users" class="nav-link">Користувачі</a></li>
-            <li><a href="statistics" class="nav-link">Статистика</a></li>
+        <ul class="nav-links" id="nav-links">
+
         </ul>
     </nav>
     <h2 id="username"></h2>
@@ -89,7 +77,7 @@
 
             <div>
                 <label for="photo">Car Photo:</label>
-                <input type="file" id="photo" name="photo" accept="image/*" required>
+                <input type="file" id="carphoto" name="photo" accept="image/*" required>
             </div>
 
             <div>
@@ -105,84 +93,8 @@
     </div>
 
     <script>
-        function deleteCookie(name) {
-            document.cookie = name + '=; Max-Age=0; path=/;';
-        }
-
-        function showlogin() {
-            $("#login").css('visibility', 'visible');
-        }
-
-        function logout() {
-            deleteCookie('username');
-            alert('Ви вийшли з системи!');
-        }
-
-        function showsignupform() {
-            $("#signupform").css("visibility", "visible");
-            $("#loginform").css("visibility", "hidden");
-        }
-
-        function showloginform() {
-            $("#signupform").css("visibility", "hidden");
-            $("#loginform").css("visibility", "visible");
-        }
-
-        function signup() {
-            if ($("#signuppassword").val() == $("#confirmpassword").val()) {
-                $.ajax({
-                    async: true,
-                    url: `/authorize/signup`,
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded"
-                    },
-                    data: {
-                        login: $("#signupusername").val(),
-                        password: $("#signuppassword").val()
-                    },
-                    success: function (response) {
-                        if (response.success) {
-                            alert("Реєстрація успішна!");
-                            document.cookie = `user=${response.login}; path=/;`;
-                        } else {
-                            alert(response.message);
-                        }
-                    },
-                    error: function () {
-                        alert("Сталася помилка під час реєстрації!");
-                    }
-                });
-            }
-        }
-
-        function login() {
-            $.ajax({
-                async: true,
-                url: `/authorize/login`,
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                data: {
-                    login: $("#loginusername").val(),
-                    password: $("#loginpassword").val()
-                },
-                success: function (response) {
-                    if (response) {
-                        document.cookie = `username=${response.login}; path=/;`;
-                        alert("Логін успішний!");
-                    } else {
-                        alert("Невірний логін або пароль!");
-                    }
-                },
-                error: function (err) {
-                    console.error(err)
-                    alert("Сталася помилка під час авторизації!");
-                }
-            });
-        }
         window.onload = () => {
+            fillNav();
             if (!document.cookie.includes("username")) {
                 console.log("no")
                 showlogin();
@@ -204,7 +116,7 @@
             formData.append('year', $('#year').val());
             formData.append('mileage', $('#mileage').val());
             formData.append('price', $('#price').val());
-            formData.append('photo', $('#photo')[0].files[0]);
+            formData.append('photo', $('#carphoto')[0].files[0]);
             formData.append('notes', $('#notes').val());
             formData.append('color', $('#color').val());
             formData.append('dealer', document.cookie

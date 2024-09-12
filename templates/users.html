@@ -9,17 +9,14 @@
     <link href="/static/css/common.css" rel="stylesheet">
     <link href="/static/css/users.css" rel="stylesheet">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script src="../static/js/nav-links.js"></script>
 </head>
 
 <body>
     <nav class="horizontal-navbar">
         <a href="/" class="logo">AutoSale</a>
-        <ul class="nav-links">
-            <li><a href="/" class="nav-link">Головна</a></li>
-            <li><a href="profile" class="nav-link">Профіль</a></li>
-            <li><a href="collections" class="nav-link">Управління</a></li>
-            <li><a href="users" class="nav-link">Користувачі</a></li>
-            <li><a href="statistics" class="nav-link">Статистика</a></li>
+        <ul class="nav-links" id="nav-links">
+
         </ul>
     </nav>
     <div id="user-management">
@@ -39,34 +36,42 @@
     </div>
 
     <script>
-        function loadUsers() {
-            $.ajax({
-                url: '/api/users',
-                method: 'GET',
-                success: function (users) {
-                    let rows = '';
-                    users.forEach(user => {
-                        rows += `<tr>
+        window.onload = () => {
+            fillNav();
+        }
+
+        function updateTable(users) {
+            let rows = '';
+            users.forEach(user => {
+                rows += `<tr>
                         <td>${user.login}</td>
                         <td>${user.role}</td>
                         <td>`
-                        if (user.role == "owner")
-                            rows += "owner"
-                        else {
-                            rows +=
-                                ` <select class="role-select" id="rs${user._id}">
+                if (user.role == "owner")
+                    rows += "owner"
+                else {
+                    rows +=
+                        ` <select class="role-select" id="rs${user._id}">
                                 <option value="user" ${user.role === 'user' ? 'selected' : ''}>user</option>
                                 <option value="operator" ${user.role === 'operator' ? 'selected' : ''}>operator</option>
                                 <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>admin</option>
                             </select>
                         </td>`;
-                        }
-                        rows += `<td>
+                }
+                rows += `<td>
                     <button class="update-role-btn" onClick='updateRole("${user._id}")' data-username="${user.login}">Update Role</button>
                 </td> </tr>`;;
 
-                    });
-                    $('#user-rows').html(rows);
+            });
+            $('#user-rows').html(rows);
+        }
+
+        function loadUsers() {
+            $.ajax({
+                url: '/api/users',
+                method: 'GET',
+                success: function (users) {
+                    updateTable(users)
                 },
                 error: function () {
                     alert('Failed to load users.');
@@ -87,6 +92,7 @@
                 }),
                 success: function (response) {
                     alert(response.message);
+                    loadUsers();
                 },
                 error: function (xhr, status, error) {
                     alert('Failed to update role: ' + xhr.responseText);

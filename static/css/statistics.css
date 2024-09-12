@@ -13,12 +13,15 @@ h3 {
 }
 
 /* Style for sections */
-#clients-info, #top-dealer-info, #contracts-info {
+#clients-info,
+#top-dealer-info,
+#contracts-info {
     margin-bottom: 30px;
 }
 
 button {
-    background-color: #4CAF50; /* Green */
+    background-color: #4CAF50;
+    /* Green */
     color: white;
     border: none;
     padding: 10px 20px;
@@ -35,12 +38,15 @@ button:hover {
     background-color: #45a049;
 }
 
-#clients-result, #dealer-result, #contracts-result {
-    margin-top: 15px;
-    padding: 10px;
+#result {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+#result th,
+#result td {
+    padding: 12px;
     border: 1px solid #ddd;
-    border-radius: 4px;
-    background-color: #f9f9f9;
-    white-space: pre-wrap; /* Preserve whitespace formatting */
-    font-family: monospace; /* Monospace font for JSON-like content */
+    text-align: left;
 }

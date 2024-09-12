@@ -5,14 +5,15 @@
     visibility: hidden;
     backdrop-filter: blur(10px);
     z-index: 1000;
+    text-align: center;
 }
 .auth {
     text-align: center;
     position: absolute;
-    width: 500px;
+     width: 500px;
     left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+    top: 50%; 
+    transform: translate(-50%, -50%); 
     border: solid 2px;
     border-color: var(--main-bg-color);
     border-radius: 20px;

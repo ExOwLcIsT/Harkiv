@@ -8,54 +8,95 @@
     <link href="../static/css/navbar.css" rel="stylesheet">
     <link href="../static/css/statistics.css" rel="stylesheet">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script src="../static/js/nav-links.js"></script>
 </head>
 
 <body>
     <nav class="horizontal-navbar">
         <a href="/" class="logo">AutoSale</a>
-        <ul class="nav-links">
-            <li><a href="/" class="nav-link">Головна</a></li>
-            <li><a href="profile" class="nav-link">Профіль</a></li>
-            <li><a href="collections" class="nav-link">Управління</a></li>
-            <li><a href="users" class="nav-link">Користувачі</a></li>
-            <li><a href="statistics" class="nav-link">Статистика</a></li>
+        <ul class="nav-links" id="nav-links">
+
         </ul>
     </nav>
 
     <div class="statistics-container">
         <h2>Statistics and Reports</h2>
-
-        <!-- Different sections for each query -->
-        <div id="clients-info">
-            <h3>1. Clients Information</h3>
-            <button onclick="fetchAllClients()">All Clients</button>
-            <button onclick="fetchClientsWithMultiplePurchases()">Clients with Multiple Purchases</button>
-            <div id="clients-result"></div>
+        <div id="requests">
+            <h3>1. Інформація про клієнтів</h3>
+            <button onclick="fetchAllClients()">Всі клієнти</button>
+            <button onclick="fetchClientsWithMultiplePurchases()">Клієнти з кількома покупками</button>
+            <h3>2. Топ дилер</h3>
+            <button onclick="fetchTopDealer()">Топ-дилер</button>
+            <h3>3. Договори з машинами, взятими у кредит</h3>
+            <button onclick="fetchCreditContracts()">Машини, взяті у кредит</button>
+            <h3>4. Клієнти, які просрочили оплату</h3>
+            <button onclick="fetchClientsWithLatePayments()">Клієнти, які прострочили оплату</button>
+            <h3>5. Попередні власники вживаних автомобілів</h3>
+            <button onclick="fetchPreviousOwners()">Попередні власники машин</button>
+            <h3>6. Договори за датою</h3>
+            <button onclick="fetchContractsByDate()">Контракти, відсортовані за датою</button>
+            <h3>7. Списки клієнтів і автомобілів по виду оплати</h3>
+            <button onclick="fetchClientsAndCarsByPayment()">Клієнти та машини за типом оплати</button>
+            <h3>8. Кількість договорів з кожним клієнтом</h3>
+            <button onclick="fetchContractsPerClient()">Кількість договорів у клієнтів</button>
+            <h3>9. Кількість договорів, що обслуговуються кожним дилером</h3>
+            <button onclick="fetchContractsPerDealer()">Кількість договорів у дилерів</button>
+            <h3>10. Сума продажів моделей кожної марки і загальна сума продажів</h3>
+            <button onclick="fetchSalesSum()">Загальна сума продажів</button>
+            <table id="result">
+                <thead id="result-head"></thead>
+                <tbody id="result-body"></tbody>
+            </table>
         </div>
-
-        <div id="top-dealer-info">
-            <h3>2. Dealer with Most Contracts in a Month</h3>
-            <button onclick="fetchTopDealer()">Fetch Top Dealer</button>
-            <div id="dealer-result"></div>
-        </div>
-
-
-        <div id="contracts-info">
-            <h3>3. Contracts for Cars Bought on Credit</h3>
-            <button onclick="fetchCreditContracts()">Fetch Credit Contracts</button>
-            <div id="contracts-result"></div>
-        </div>
-
-
     </div>
 
     <script>
+        window.onload = () => {
+            fillNav();
+        }
+
+        function fillResult(data) {
+            $("#result-head").html("");
+            $("#result-body").html("");
+            if (!(Array.isArray(data.documents)) || data.documents.length === 0) {
+                $("#result-head").html("Таких документів в колекції немає");
+                return;
+            }
+            $("#result-head").html("");
+            $("#result-head").html("<tr>");
+            if (data.fields.includes("_id"))
+                $("#result-head").append("<th>_id</th>");
+            data.fields.forEach(element => {
+                if (element !== "_id") {
+                    $("#result-head").append("<th>" + element + "</th>");
+                }
+            });
+            $("#result-head").append("</tr>");
+
+            data.documents.forEach(document => {
+                $("#result-body").append("<tr>");
+
+                $("#result-body").append(
+                    document['_id'] !== undefined ? `<td>${document["_id"]}</td>` : ''
+                );
+                data.fields.forEach(field => {
+                    if (field !== "_id") {
+                        $("#result-body").append(
+                            `<td>${document[field] !== undefined ? document[field] : ''}</td>`
+                        );
+                    }
+                });
+                $("#result-body").append("</tr>");
+            });
+        }
+
         function fetchAllClients() {
             $.ajax({
-                url: "/api/clients/all",
+                url: "/api/collections/clients",
                 type: "GET",
                 success: function (response) {
-                    $("#clients-result").html(JSON.stringify(response));
+                    console.log(response)
+                    fillResult(response)
                 },
                 error: function (xhr, status, error) {
                     alert('Error fetching all clients: ' + xhr.responseText);
@@ -65,10 +106,11 @@
 
         function fetchClientsWithMultiplePurchases() {
             $.ajax({
-                url: "/api/clients/multiple-purchases",
+                url: "/api/collections/clients/multiple-purchases",
                 type: "GET",
                 success: function (response) {
-                    $("#clients-result").html(JSON.stringify(response));
+                    console.log(response)
+                    fillResult(response)
                 },
                 error: function (xhr, status, error) {
                     alert('Error fetching clients with multiple purchases: ' + xhr.responseText);
@@ -81,7 +123,8 @@
                 url: "/api/dealers/top",
                 type: "GET",
                 success: function (response) {
-                    $("#dealer-result").html(JSON.stringify(response));
+                    console.log(response)
+                    fillResult(response)
                 },
                 error: function (xhr, status, error) {
                     alert('Error fetching top dealer: ' + xhr.responseText);
@@ -94,10 +137,116 @@
                 url: "/api/contracts/credit",
                 type: "GET",
                 success: function (response) {
-                    $("#contracts-result").html(JSON.stringify(response));
+                    console.log(response)
+                    fillResult(response)
                 },
                 error: function (xhr, status, error) {
                     alert('Error fetching credit contracts: ' + xhr.responseText);
+                }
+            });
+        }
+
+        function fetchClientsWithLatePayments() {
+            $.ajax({
+                url: "/api/clients/late-payments",
+                type: "GET",
+                success: function (response) {
+                    console.log(response);
+                    fillResult(response);
+                },
+                error: function (xhr, status, error) {
+                    alert('Error fetching clients with late payments: ' + xhr.responseText);
+                }
+            });
+        }
+
+        function fetchPreviousOwners() {
+            $.ajax({
+                url: "/api/collections/dealers",
+                type: "GET",
+                success: function (response) {
+                    console.log(response);
+                    fillResult(response);
+                },
+                error: function (xhr, status, error) {
+                    alert('Error fetching previous owners: ' + xhr.responseText);
+                }
+            });
+        }
+
+        function fetchContractsByDate() {
+            $.ajax({
+                url: "/api/contracts/by-date",
+                type: "GET",
+                success: function (response) {
+                    console.log(response);
+                    fillResult(response);
+                },
+                error: function (xhr, status, error) {
+                    alert('Error fetching contracts by date: ' + xhr.responseText);
+                }
+            });
+        }
+
+        function fetchClientsAndCarsByPayment() {
+            $.ajax({
+                url: "/api/clients-cars/payment",
+                type: "GET",
+                success: function (response) {
+                    console.log(response);
+                    fillResult(response);
+                },
+                error: function (xhr, status, error) {
+                    alert('Error fetching clients and cars by payment type: ' + xhr.responseText);
+                }
+            });
+        }
+
+        function fetchContractsPerClient() {
+            $.ajax({
+                url: "/api/contracts/per-client",
+                type: "GET",
+                success: function (response) {
+                    console.log(response);
+                    fillResult(response);
+                },
+                error: function (xhr, status, error) {
+                    alert('Error fetching contracts per client: ' + xhr.responseText);
+                }
+            });
+        }
+
+        function fetchContractsPerDealer() {
+            $.ajax({
+                url: "/api/contracts/per-dealer",
+                type: "GET",
+                success: function (response) {
+                    console.log(response);
+                    fillResult(response);
+                },
+                error: function (xhr, status, error) {
+                    alert('Error fetching contracts per dealer: ' + xhr.responseText);
+                }
+            });
+        }
+
+        function fetchSalesSum() {
+            $.ajax({
+                url: "/api/sales/sum",
+                type: "GET",
+                success: function (response) {
+                    console.log(response);
+                    fillResult(response);
+                    let sum = 0;
+                    response.documents.forEach(element => {
+                        sum += element.total_sales;
+                    });
+                    if (sum != 0) {
+                        $("#result-body").append(`Загальна сума: ${sum}`);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    alert('Error fetching sales sum: ' + xhr.responseText);
                 }
             });
         }

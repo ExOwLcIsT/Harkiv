@@ -11,17 +11,15 @@
     <link href="../static/css/container.css" rel="stylesheet">
     <link href="../static/css/navbar.css" rel="stylesheet">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script src="../static/js/login.js"></script>
+    <script src="../static/js/nav-links.js"></script>
 </head>
 
 <body>
     <nav class="horizontal-navbar">
         <a href="/" class="logo">AutoSale</a>
-        <ul class="nav-links">
-            <li><a href="/" class="nav-link">Головна</a></li>
-            <li><a href="profile" class="nav-link">Профіль</a></li>
-            <li><a href="collections" class="nav-link">Управління</a></li>
-            <li><a href="users" class="nav-link">Користувачі</a></li>
-            <li><a href="statistics" class="nav-link">Статистика</a></li>
+        <ul class="nav-links" id="nav-links">
+
         </ul>
     </nav>
     <div id="login">
@@ -40,10 +38,11 @@
             <input class="forminput" type="submit" value="Sign up">
             <input onclick="showloginform()" class="forminput" type="button" value="Log in">
         </form>
-        <form id="loginform" class="auth" onsubmit="login()">
+        <form id="loginform" class="auth" onsubmit="login(event)">
             <input class="forminput" id="loginusername" placeholder="username" required>
-            <input class="forminput" id="loginpassword" placeholder="password" required>
-            <div class="additional"><button>forgot password?</button></div>
+            <input class="forminput" id="loginpassword" placeholder="password" type="password" required>
+            <div class="additional"><button onclick="forgotPassword()">forgot password?</button></div>
+            <h4 id="forgottenPassword"></h4>
             <input class="forminput" type="submit" value="Log in">
             <input onclick="showsignupform()" class="forminput" type="button" value="Sign up">
         </form>
@@ -95,170 +94,8 @@
 
 
     <script>
-        function filter() {
-            event.preventDefault();
-
-            var selectedBrands = [];
-            $('input[name="brand"]:checked').each(function () {
-                selectedBrands.push($(this).val());
-            });
-
-            var priceMin = $('#price-min').val();
-            var priceMax = $('#price-max').val();
-            var mileageMax = $('#mileage-max').val();
-            var yearMin = $('#year-min').val();
-            var yearMax = $('#year-max').val();
-            var sortOption = $('#sort').val();
-
-            $.ajax({
-                url: '/api/cars/filter',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    brands: selectedBrands.length ? selectedBrands : null,
-                    price_min: priceMin ? parseFloat(priceMin) : null,
-                    price_max: priceMax ? parseFloat(priceMax) : null,
-                    mileage_max: mileageMax ? parseInt(mileageMax) : null,
-                    year_min: yearMin ? parseInt(yearMin) : null,
-                    year_max: yearMax ? parseInt(yearMax) : null,
-                    sort: sortOption
-                }),
-                success: function (response) {
-                    fillContainer(response);
-                },
-                error: function (xhr, status, error) {
-                    console.error('Error fetching cars:', error);
-                }
-            });
-        }
-
-        function fillContainer(data) {
-            $("#carscontainer").html("");
-            data.forEach(element => {
-                $("#carscontainer").append(`
-                      <div class="car-card">
-            <img src="${element.image}" alt="Car Image">
-            <div class="car-card-content">
-                <h3>${element.brand}</h3>
-                <h4>${element.model}</h4>
-                <div class="car-details">
-                    <span>Year: ${element.year}</span>
-                    <span>Mileage: ${element.mileage} km</span>
-                    <span>Color: ${element.color}</span>
-                </div>
-                <p>${element.description}</p>
-                <div class="price">$${element.price}</div>
-                <button onClick='createOrder("${element._id}")'>Придбати</button>
-            </div>
-        </div>`);
-            });
-        }
-
-        function createOrder(id) {
-            $.ajax({
-                url: '/api/orders',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    car_id: id
-                }),
-                success: function (response) {
-                    alert('Order placed successfully!');
-                },
-                error: function (xhr) {
-                    alert('Failed to place order: ' + xhr.responseText);
-                }
-            });
-        }
-
-        function deleteCookie(name) {
-            document.cookie = name + '=; Max-Age=0; path=/;';
-        }
-
-        function showlogin() {
-            $("#login").css('visibility', 'visible');
-        }
-
-        function logout() {
-            deleteCookie('username');
-            alert('Ви вийшли з системи!');
-            $("#logout").css("visibility", "hidden");
-            $("#showlog").css("visibility", "visible");
-        }
-
-        function showsignupform() {
-            $("#signupform").css("visibility", "visible");
-            $("#loginform").css("visibility", "hidden");
-        }
-
-        function showloginform() {
-            $("#signupform").css("visibility", "hidden");
-            $("#loginform").css("visibility", "visible");
-        }
-
-        function signup(event) {
-            event.preventDefault();
-            if ($("#signuppassword").val() !== $("#confirmpassword").val()) {
-                alert("Passwords do not match!");
-                return;
-            }
-
-            let formData = new FormData(document.getElementById('signupform'));
-
-            $.ajax({
-                url: `/authorize/signup`,
-                method: "POST",
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function (response) {
-                    if (response.success) {
-                        alert("Registration successful!");
-                        document.cookie = `username=${response.login}; path=/;`;
-                        $("#logout").css("visibility", "visible");
-                        $("#showlog").css("visibility", "hidden");
-                        $("#login").css('visibility', 'hidden ');
-                    } else {
-                        alert(response.message);
-                    }
-                },
-                error: function () {
-                    alert("An error occurred during registration!");
-                }
-            });
-        }
-
-        function login() {
-            $.ajax({
-                async: true,
-                url: `/authorize/login`,
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                data: {
-                    login: $("#loginusername").val(),
-                    password: $("#loginpassword").val()
-                },
-                success: function (response) {
-                    if (response) {
-                        document.cookie = `username=${response.login}; path=/;`;
-                        alert("Логін успішний!");
-                        $("#logout").css("visibility", "visible");
-                        $("#showlog").css("visibility", "hidden");
-                    } else {
-                        alert("Невірний логін або пароль!");
-                    }
-                },
-                error: function (err) {
-                    console.error(err)
-                    alert("Сталася помилка під час авторизації!");
-                }
-            });
-        }
-        document.getElementById("year-max").setAttribute("max", new Date().getFullYear());
-        document.getElementById("year-min").setAttribute("max", new Date().getFullYear());
         window.onload = () => {
+            fillNav();
             if (document.cookie.includes("username")) {
                 $("#logout").css("visibility", "visible");
                 $("#showlog").css("visibility", "hidden");
@@ -309,6 +146,85 @@
                 }
             });
         };
+
+        function filter() {
+            event.preventDefault();
+
+            var selectedBrands = [];
+            $('input[name="brand"]:checked').each(function () {
+                selectedBrands.push($(this).val());
+            });
+
+            var priceMin = $('#price-min').val();
+            var priceMax = $('#price-max').val();
+            var mileageMax = $('#mileage-max').val();
+            var yearMin = $('#year-min').val();
+            var yearMax = $('#year-max').val();
+            var sortOption = $('#sort').val();
+
+            $.ajax({
+                url: '/api/cars/filter',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    brands: selectedBrands.length ? selectedBrands : null,
+                    price_min: priceMin ? parseFloat(priceMin) : null,
+                    price_max: priceMax ? parseFloat(priceMax) : null,
+                    mileage_max: mileageMax ? parseInt(mileageMax) : null,
+                    year_min: yearMin ? parseInt(yearMin) : null,
+                    year_max: yearMax ? parseInt(yearMax) : null,
+                    sort: sortOption
+                }),
+                success: function (response) {
+                    fillContainer(response);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error fetching cars:', error);
+                }
+            });
+        }
+
+        function fillContainer(data) {
+            $("#carscontainer").html("");
+            data.forEach(element => {
+                $("#carscontainer").append(`
+                      <div class="car-card">
+            <img src="${element.photo}" alt="Car Image">
+            <div class="car-card-content">
+                <h3>${element.brand}</h3>
+                <h4>${element.model}</h4>
+                <div class="car-details">
+                    <span>Year: ${element.year}</span>
+                    <span>Mileage: ${element.mileage} km</span>
+                    <span>Color: ${element.color}</span>
+                </div>
+                <p>${element.description}</p>
+                <div class="price">$${element.price}</div>
+                <button onClick='createOrder("${element._id}")'>Придбати</button>
+            </div>
+        </div>`);
+            });
+        }
+
+        function createOrder(id) {
+            $.ajax({
+                url: '/api/orders',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    car_id: id
+                }),
+                success: function (response) {
+                    alert('Order placed successfully!');
+                    window.location.reload(true);
+                },
+                error: function (xhr) {
+                    alert('Failed to place order: ' + xhr.responseText);
+                }
+            });
+        }
+        document.getElementById("year-max").setAttribute("max", new Date().getFullYear());
+        document.getElementById("year-min").setAttribute("max", new Date().getFullYear());
     </script>
 </body>
 
