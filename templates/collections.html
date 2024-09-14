@@ -22,8 +22,8 @@
         <h1>Database collection Management</h1>
 
         <div class="actions">
+            <input id="createcollection">
             <button onclick="createcollection()">Create collection</button>
-            <button onclick="dropcollection()">Drop collection</button>
         </div>
 
         <table class="collection-management">
@@ -53,7 +53,67 @@
             update();
         };
 
+        function addColumn(collection_name) {
+            const columnName = $("#new-column-name").val().trim();
+            if (!columnName) {
+                alert("Please enter a column name.");
+                return;
+            }
+
+            $.ajax({
+                url: `/api/collection/add-column/${collection_name}/${columnName}`,
+                type: "POST",
+                contentType: "application/json",
+                success: function () {
+                    alert("Column added successfully!");
+                    update();
+                    viewcollection(collection_name)
+                },
+                error: function (xhr, status, error) {
+                    alert('Error adding column: ' + xhr.responseText);
+                }
+            });
+        }
+
+        function deleteColumn(collection_name, columnName) {
+            $.ajax({
+                url: `/api/collections/column/delete/${collection_name}/${columnName}`,
+                type: 'DELETE',
+                success: function (response) {
+                    alert('Column deleted successfully');
+                    console.log("ura")
+                    update();
+                    viewcollection(collection_name);
+                },
+                error: function (xhr, status, error) {
+                    alert('Error deleting column: ' + xhr.responseText);
+                }
+            });
+        }
+
+        function createcollection() {
+            $.ajax({
+                async: true,
+                url: `/api/collections/${$("#createcollection").val()}`,
+                method: "POST",
+                headers: {
+                    "content-type": "application/json;odata=verbose"
+                },
+                success: function (data) {
+                    update();
+                },
+            });
+        }
+
         function viewcollection(collectionName) {
+            $("#collection").html(`
+                    <h2 id="collname"></h2>
+            <table class="view-collection">
+                <thead id="viewhead">
+                </thead>
+                <tbody id="viewbody">
+                </tbody>
+            </table>`);
             $.ajax({
                 async: true,
                 url: `/api/collections/${collectionName}`,
@@ -62,36 +122,134 @@
                     "content-type": "application/json;odata=verbose"
                 },
                 success: function (data) {
+                    $("#collection").prepend(`<input type="text" id="new-column-name" placeholder="Enter new column name">
+                    <button onclick="addColumn('${collectionName}')">Add Column</button>`)
                     $("#collname").html(data.collection_name);
                     $("#viewhead").html("<tr>");
+
                     $("#viewhead").append("<th>_id</th>");
                     data.fields.forEach(element => {
                         if (element !== "_id") {
-                            $("#viewhead").append("<th>" + element + "</th>");
+                            $("#viewhead").append(
+                                `<th>${element} <button onclick="deleteColumn('${data.collection_name}', '${element}')">🗑</button></th>`
+                            );
                         }
                     });
+                    $("#viewhead").append("<th>Actions</th>");
                     $("#viewhead").append("</tr>");
 
                     $("#viewbody").html("");
                     data.documents.forEach(document => {
                         $("#viewbody").append("<tr>");
 
-                        $("#viewbody").append(
-                            `<td>${document['_id'] !== undefined ? document['_id'] : ''}</td>`);
+                        $("#viewbody").append(`<td>${document['_id']}</td>`);
+
                         data.fields.forEach(field => {
                             if (field !== "_id") {
-                                $("#viewbody").append(
-                                    `<td>${document[field] !== undefined ? document[field] : ''}</td>`
-                                );
+                                if (field != "role")
+                                    $("#viewbody").append(
+                                        `<td><input type="text" value="${document[field] !== undefined ? document[field] : ''}" data-field="${field}" data-id="${document['_id']}"></td>`
+                                    );
+                                else
+                                    $("#viewbody").append(
+                                        `<td>${document[field]}</td>`
+                                    );
                             }
                         });
+
+                        $("#viewbody").append(`
+                    <td>
+                        <button onclick="deleteRow('${data.collection_name}', '${document['_id']}')">delete</button>
+                        <button onclick="updateRow('${data.collection_name}', '${document['_id']}', getRowData('${document['_id']}'))">update</button>
+                    </td>
+                `);
                         $("#viewbody").append("</tr>");
+
                     });
+                    let addRow = "<tr id='add-new-row'><td></td>";
+                    data.fields.forEach(field => {
+                        if (field !== "_id" && field !== "role") {
+                            addRow +=
+                                `<td><input type="text" id="new-${field}" placeholder="Enter ${field}"></td>`;
+                        } else {
+                            addRow += `<td></td>`;
+                        }
+                    });
+                    addRow +=
+                        `<td><button onclick="saveNewRow('${collectionName}')">Add</button></td></tr>`;
+                    $("#viewbody").append(addRow);
                 },
                 error: function (error) {
                     console.log("error: " + JSON.stringify(error));
                 }
             });
+        }
+
+        function saveNewRow(collection_name) {
+            let newRowData = {};
+            $("#viewhead th").each(function (index, element) {
+                if (index !== 0) {
+                    const field = $(element).text().split(" ")[0];
+                    newRowData[field] = $(`#new-${field}`).val();
+                }
+            });
+
+            $.ajax({
+                url: `/api/collection/add-document/${collection_name}`,
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(newRowData),
+                success: function () {
+                    alert("Document added successfully!");
+                    update();
+                    viewcollection(collection_name);
+                },
+                error: function (xhr, status, error) {
+                    alert('Error adding document: ' + xhr.responseText);
+                }
+            });
+        }
+
+        function deleteRow(collection_name, documentId) {
+            $.ajax({
+                url: `/api/collections/document/delete/${collection_name}/${documentId}`,
+                type: 'DELETE',
+                success: function (response) {
+                    alert('Row deleted successfully');
+                    viewcollection(collection_name);
+                },
+                error: function (xhr, status, error) {
+                    alert('Error deleting row: ' + xhr.responseText);
+                }
+            });
+        }
+
+        function updateRow(collection_name, documentId, updatedData) {
+            $.ajax({
+                url: `/api/collections/document/update/${collection_name}/${documentId}`,
+                type: 'PUT',
+                data: JSON.stringify(updatedData),
+                contentType: 'application/json',
+                success: function (response) {
+                    alert('Row updated successfully');
+                    update();
+                    viewcollection(collection_name);
+                },
+                error: function (xhr, status, error) {
+                    alert('Error updating row: ' + xhr.responseText);
+                }
+            });
+        }
+
+        function getRowData(documentId) {
+            const updatedData = {};
+            $(`input[data-id="${documentId}"]`).each(function () {
+                const field = $(this).data('field');
+                if (!$(this).prop('readonly')) {
+                    updatedData[field] = $(this).val();
+                }
+            });
+            return updatedData;
         }
 
         function deletecollection(collectionName) {
@@ -104,7 +262,6 @@
                         "content-type": "application/json;odata=verbose"
                     },
                     success: function (data) {
-                        console.log("deleted");
                         update();
                     }
                 });
@@ -121,8 +278,15 @@
                     "content-type": "application/json;odata=verbose"
                 },
                 success: function (data) {
+                    $("#collection").html(`
+                    <h2 id="collname"></h2>
+            <table class="view-collection">
+                <thead id="viewhead">
+                </thead>
+                <tbody id="viewbody">
+                </tbody>
+            </table>`);
                     $("#tbody").html("");
-                    console.log(data)
                     for (const [key, value] of Object.entries(data)) {
                         $("#tbody").append(
                             `

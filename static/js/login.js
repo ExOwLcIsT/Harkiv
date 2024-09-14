@@ -72,19 +72,19 @@ function login(event) {
         },
         success: function (response) {
             if (response) {
-                console.log(response)
                 document.cookie = `username=${response.login}; path=/;`;
                 alert("Логін успішний!");
                 $("#logout").css("visibility", "visible");
                 $("#showlog").css("visibility", "hidden");
                 $("#login").css('visibility', 'hidden ');
+                $("#loginform").css('visibility', 'hidden')
                 window.location.reload(true);
             } else {
                 alert("Невірний логін або пароль!");
             }
         },
         error: function (err) {
-            console.error(err)
+            console.error(err) 
             alert("Сталася помилка під час авторизації!");
         }
     });

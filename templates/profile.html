@@ -31,7 +31,7 @@
             <input class="forminput" type="submit" value="Sign up">
             <input onclick="showloginform()" class="forminput" type="button" value="Log in">
         </form>
-        <form id="loginform" class="auth" onsubmit="login()">
+        <form id="loginform" class="auth" onsubmit="login(event)">
             <input class="forminput" id="loginusername" placeholder="username" required>
             <input class="forminput" id="loginpassword" placeholder="password" type="password" required>
             <div class="additional"><button onclick="forgotPassword()">forgot password?</button></div>

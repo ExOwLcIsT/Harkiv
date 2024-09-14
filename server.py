@@ -211,18 +211,22 @@ def add_car():
     notes = request.form['notes'],
     color = request.form['color'],
     dealer = request.form['dealer']
+    photo = request.files['photo']
 
     if 'photo' not in request.files:
         return jsonify({'error': 'No photo uploaded'}), 400
 
-    photo = request.files['photo']
     if photo.filename == '':
         return jsonify({'error': 'No selected file'}), 400
 
-    filename = secure_filename(photo.filename)
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    photo.save(file_path)
+    # This gives the directory of your current script
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    # Ensure this is a writable folder
+    upload_folder = os.path.join(base_dir, 'uploads')
+    file_path = os.path.join(upload_folder, photo.filename)
 
+    os.makedirs(upload_folder, exist_ok=True)
+    photo.save(file_path)
     car_data = {
         'brand': brand,
         'model': model,
@@ -342,11 +346,71 @@ def get_collection(name):
 
 
 @app.route('/api/collections/<name>', methods=['DELETE'])
-@role_required("owner", "admin")
-def delete_collections(name):
+@role_required("owner")
+def delete_collection(name):
     db[name].drop()
     collection_names = db.list_collection_names()
     return jsonify(collection_names), 200
+
+
+@app.route('/api/collections/<name>', methods=['POST'])
+@role_required("owner")
+def create_collection(name):
+    try:
+
+        if not name:
+            return jsonify({'error': 'Collection name is required'}), 400
+
+        collection = db[name]
+        collection.insert_one({"status": "dummy_data"})
+        return jsonify({'message': f'Collection "{name}" created successfully'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/collections/document/delete/<collection_name>/<document_id>', methods=['DELETE'])
+@role_required("owner", "admin")
+def delete_document(collection_name, document_id):
+    db[collection_name].delete_one({"_id": ObjectId(document_id)})
+    return jsonify({"message": "Document deleted successfully"}), 200
+
+
+@app.route('/api/collections/document/update/<collection_name>/<document_id>', methods=['PUT'])
+@role_required("owner", "admin")
+def update_document(collection_name, document_id):
+    updated_data = request.json
+    db[collection_name].update_one(
+        {"_id": ObjectId(document_id)}, {"$set": updated_data})
+    return jsonify({"message": "Document updated successfully"}), 200
+
+
+@app.route('/api/collections/column/delete/<collection_name>/<column_name>', methods=['DELETE'])
+@role_required("owner", "admin")
+def delete_column(collection_name, column_name):
+    db[collection_name].update_many({}, {"$unset": {column_name: ""}})
+    return jsonify({"message": "Column deleted successfully"}), 200
+
+
+@app.route('/api/collection/add-column/<collection_name>/<column_name>', methods=['POST'])
+@role_required("owner", "admin")
+def add_column(collection_name, column_name):
+    if not column_name:
+        return jsonify({"error": "Column name is required"}), 400
+
+    db[collection_name].update_many({}, {"$set": {column_name: ""}})
+    return jsonify({"message": "Column added successfully"}), 200
+
+
+@app.route('/api/collection/add-document/<collection_name>', methods=['POST'])
+@role_required("owner", "admin", "operator")
+def add_document(collection_name):
+    data = request.get_json()
+
+    result = db[collection_name].insert_one(data)
+    if result.inserted_id:
+        return jsonify({"message": "Document added successfully", "id": str(result.inserted_id)}), 200
+    else:
+        return jsonify({"error": "Failed to add document"}), 500
 
 
 @app.route('/api/orders', methods=['POST'])
@@ -390,7 +454,8 @@ def create_order():
     contracts_collection.insert_one(contract_data)
     cars_collection.update_one({"_id": ObjectId(car_id)}, {
                                "$set": {"sold": True}})
-    dealers_collection.insert_one(dealer)
+    if dealers_collection.find_one({"_id": dealer["_id"]}) == None:
+        dealers_collection.insert_one(dealer)
     if clients_collection.find_one({"_id": get_current_user()["_id"]}) == None:
         clients_collection.insert_one(get_current_user())
     return jsonify({"success": True, "message": "Order placed successfully!"}), 201
