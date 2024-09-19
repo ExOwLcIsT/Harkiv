@@ -51,7 +51,7 @@ function signup(event) {
                 alert(response.message);
             }
         },
-        error: function () {
+        error: function (error) {
             alert("An error occurred during registration!");
         }
     });
@@ -84,13 +84,14 @@ function login(event) {
             }
         },
         error: function (err) {
-            console.error(err) 
+            console.error(err)
             alert("Сталася помилка під час авторизації!");
         }
     });
 }
 
-function forgotPassword() {
+function forgotPassword(event) {
+    event.preventDefault()
     $.ajax({
         async: true,
         url: `/api/password/${$("#loginusername").val()}`,

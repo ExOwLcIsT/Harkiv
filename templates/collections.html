@@ -13,7 +13,6 @@
 
 <body>
     <nav class="horizontal-navbar">
-        <a href="/" class="logo">AutoSale</a>
         <ul class="nav-links" id="nav-links">
 
         </ul>
@@ -47,7 +46,7 @@
             </table>
         </div>
     </div>
-
+    <div id="error"></div>
     <script>
         window.onload = () => {
             update();
@@ -55,13 +54,15 @@
 
         function addColumn(collection_name) {
             const columnName = $("#new-column-name").val().trim();
+            const columnType = $("#new-column-type").val().trim();
+            console.log(columnType)
             if (!columnName) {
                 alert("Please enter a column name.");
                 return;
             }
 
             $.ajax({
-                url: `/api/collection/add-column/${collection_name}/${columnName}`,
+                url: `/api/collection/add-column/${collection_name}/${columnName}/${columnType}`,
                 type: "POST",
                 contentType: "application/json",
                 success: function () {
@@ -70,23 +71,22 @@
                     viewcollection(collection_name)
                 },
                 error: function (xhr, status, error) {
-                    alert('Error adding column: ' + xhr.responseText);
+                    alert('Error adding column: ' + error);
                 }
             });
         }
 
         function deleteColumn(collection_name, columnName) {
             $.ajax({
-                url: `/api/collections/column/delete/${collection_name}/${columnName}`,
+                url: `/api/collections/column/${collection_name}/${columnName}`,
                 type: 'DELETE',
                 success: function (response) {
                     alert('Column deleted successfully');
-                    console.log("ura")
                     update();
                     viewcollection(collection_name);
                 },
                 error: function (xhr, status, error) {
-                    alert('Error deleting column: ' + xhr.responseText);
+                    alert('Error deleting column: ' + error);
                 }
             });
         }
@@ -102,6 +102,9 @@
                 success: function (data) {
                     update();
                 },
+                error: function (xhr, status, error) {
+                    alert('Error creating collection: ' + error);
+                }
             });
         }
 
@@ -123,18 +126,30 @@
                 },
                 success: function (data) {
                     $("#collection").prepend(`<input type="text" id="new-column-name" placeholder="Enter new column name">
+                    <select id = "new-column-type">
+                    <option selected>string</option>
+                    <option>int</option>
+                    <option>float</option>
+                    <option>boolean</option>
+                    </select>
                     <button onclick="addColumn('${collectionName}')">Add Column</button>`)
                     $("#collname").html(data.collection_name);
                     $("#viewhead").html("<tr>");
 
                     $("#viewhead").append("<th>_id</th>");
-                    data.fields.forEach(element => {
-                        if (element !== "_id") {
-                            $("#viewhead").append(
-                                `<th>${element} <button onclick="deleteColumn('${data.collection_name}', '${element}')">🗑</button></th>`
-                            );
+                    for (const [key, value] of Object.entries(data.fields)) {
+                        if (!(key === "_id")) {
+                            if (!key.includes("_id")) {
+                                $("#viewhead").append(
+                                    `<th>${key}(${value}) <button onclick="deleteColumn('${data.collection_name}', '${key}')" data-field = "${key}">🗑</button></th>`
+                                );
+                            } else {
+                                $("#viewhead").append(
+                                    `<th>${key}(${value})</th>`
+                                );
+                            }
                         }
-                    });
+                    };
                     $("#viewhead").append("<th>Actions</th>");
                     $("#viewhead").append("</tr>");
 
@@ -144,18 +159,40 @@
 
                         $("#viewbody").append(`<td>${document['_id']}</td>`);
 
-                        data.fields.forEach(field => {
-                            if (field !== "_id") {
-                                if (field != "role")
+                        for (const [key, field] of Object.entries(data.fields)) {
+                            console.log(key, field)
+                            if (!(key === "_id")) {
+                                if (!key.includes("_id") && key != "role") {
+                                    let inputType = "";
+                                    let inputElement = '';
+
+                                    switch (field) {
+                                        case "int":
+                                        case "float":
+                                            inputElement =
+                                                `<input type="number" name="${key}" value="${document[key] ? document[key] : ''}" data-id = "${document['_id']}" data-field = "${key}" data-type="${field}">`;
+                                            break;
+
+                                        case "bool":
+                                            let checked = document[key] === true ? 'checked' :
+                                                '';
+                                            inputElement =
+                                                `<input type="checkbox" name="${key}" ${checked} data-id = "${document['_id']}" data-field = "${key}" data-type="${field}">`;
+                                            break;
+                                        default:
+                                            inputElement =
+                                                `<input type="text" name="${key}" value="${document[key] ? document[key] : ''}" data-id = "${document['_id']}" data-field = "${key}" data-type="${field}">`;
+                                            break;
+                                    }
                                     $("#viewbody").append(
-                                        `<td><input type="text" value="${document[field] !== undefined ? document[field] : ''}" data-field="${field}" data-id="${document['_id']}"></td>`
+                                        "<td>" + inputElement + "</td>"
                                     );
-                                else
+                                } else
                                     $("#viewbody").append(
-                                        `<td>${document[field]}</td>`
+                                        `<td>${document[key]}</td>`
                                     );
                             }
-                        });
+                        };
 
                         $("#viewbody").append(`
                     <td>
@@ -166,21 +203,42 @@
                         $("#viewbody").append("</tr>");
 
                     });
-                    let addRow = "<tr id='add-new-row'><td></td>";
-                    data.fields.forEach(field => {
-                        if (field !== "_id" && field !== "role") {
-                            addRow +=
-                                `<td><input type="text" id="new-${field}" placeholder="Enter ${field}"></td>`;
+                    let addRow = "<tr id='add-new-row'>";
+                    for (const [key, field] of Object.entries(data.fields)) {
+                        if (!key.includes("_id") && key !== "role") {
+                            let inputType = "";
+                            let inputElement = '';
+
+                            switch (field) {
+
+                                case "int":
+                                case "float":
+                                    inputElement =
+                                        `<input type="number" name="${key}" value="${document[key] ? document[key] : ''}" data-id = "${document['_id']}" data-field = "${key}" id = "new-${key}" data-type="${field}">`;
+                                    break;
+
+                                case "bool":
+                                    let checked = document[key] === true ? 'checked' : '';
+                                    inputElement =
+                                        `<input type="checkbox" name="${key}" ${checked} data-id = "${document['_id']}" data-field = "${key}" id = "new-${key}" data-type="${field}">`;
+                                    break;
+                                default:
+                                    inputElement =
+                                        `<input type="text" name="${key}" value="${document[key] ? document[key] : ''}" data-id = "${document['_id']}" data-field = "${key}" id = "new-${key}" data-type="${field}">`;
+                                    break;
+                            }
+                            addRow += `<td> ${inputElement}</td>`;
                         } else {
-                            addRow += `<td></td>`;
+                            addRow += `<td>Не можна заповнити</td>`;
                         }
-                    });
+                    };
                     addRow +=
                         `<td><button onclick="saveNewRow('${collectionName}')">Add</button></td></tr>`;
-                    $("#viewbody").append(addRow);
+                    $(
+                        "#viewbody").append(addRow);
                 },
                 error: function (error) {
-                    console.log("error: " + JSON.stringify(error));
+                    $("#error").html(JSON.stringify(error))
                 }
             });
         }
@@ -189,8 +247,20 @@
             let newRowData = {};
             $("#viewhead th").each(function (index, element) {
                 if (index !== 0) {
-                    const field = $(element).text().split(" ")[0];
-                    newRowData[field] = $(`#new-${field}`).val();
+                    const field = $(this).attr("data-field");
+                    if ($(`#new-${field}`).attr('type') === "checkbox") {
+                        updatedData[field] = $(`#new-${field}`).prop("checked");
+                    } else {
+                        let fieldType = $(`#new-${field}`).attr("data-type");
+                        let value = $(`#new-${field}`).val();
+                        if (fieldType === "int") {
+                            newRowData[field] = parseInt(value, 10);
+                        } else if (fieldType === "float") {
+                            newRowData[field] = parseFloat(value);
+                        } else {
+                            newRowData[field] = value;
+                        }
+                    }
                 }
             });
 
@@ -205,7 +275,7 @@
                     viewcollection(collection_name);
                 },
                 error: function (xhr, status, error) {
-                    alert('Error adding document: ' + xhr.responseText);
+                    alert('Error adding document: ' + error);
                 }
             });
         }
@@ -219,7 +289,7 @@
                     viewcollection(collection_name);
                 },
                 error: function (xhr, status, error) {
-                    alert('Error deleting row: ' + xhr.responseText);
+                    alert('Error deleting row: ' + error);
                 }
             });
         }
@@ -236,7 +306,7 @@
                     viewcollection(collection_name);
                 },
                 error: function (xhr, status, error) {
-                    alert('Error updating row: ' + xhr.responseText);
+                    alert('Error updating row: ' + error);
                 }
             });
         }
@@ -246,7 +316,19 @@
             $(`input[data-id="${documentId}"]`).each(function () {
                 const field = $(this).data('field');
                 if (!$(this).prop('readonly')) {
-                    updatedData[field] = $(this).val();
+                    if ($(this).attr('type') === "checkbox") {
+                        updatedData[field] = $(this).prop("checked");
+                    } else {
+                        let fieldType = $(this).attr("data-type");
+                        let value = $(this).val();
+                        if (fieldType === "int") {
+                            updatedData[field] = parseInt(value, 10);
+                        } else if (fieldType === "float") {
+                            updatedData[field] = parseFloat(value);
+                        } else {
+                            updatedData[field] = value;
+                        }
+                    }
                 }
             });
             return updatedData;
@@ -263,6 +345,9 @@
                     },
                     success: function (data) {
                         update();
+                    },
+                    error: function (xhr, status, error) {
+                        alert('Error deleting collection: ' + error);
                     }
                 });
             }
@@ -302,7 +387,7 @@
                     };
                 },
                 error: function (error) {
-                    console.log("error: " + JSON.stringify(error));
+                    alert("error: " + JSON.stringify(error));
                 }
             });
         }

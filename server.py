@@ -22,6 +22,22 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
+def get_collection_info(documents, name):
+    fields = {}
+    for doc in documents:
+        for key in doc.keys():
+            fields.update({key: str(type(doc[key]).__name__)})
+            if str(type(doc[key]).__name__) == "ObjectId":
+                doc[key] = str(doc[key])
+    response = {
+        "collection_name": name,
+        "fields": fields,
+        "documents": documents
+    }
+
+    return response
+
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -36,11 +52,10 @@ def get_current_user():
 
 def role_required(*roles):
     def decorator(f):
-        @wraps(f)
+        @ wraps(f)
         def decorated_function(*args, **kwargs):
             user = get_current_user()
 
-            print("yes")
             if user:
                 print(f"Current user: {user['login']}, role: {user['role']}")
             else:
@@ -54,44 +69,44 @@ def role_required(*roles):
     return decorator
 
 
-@app.route('/', methods=['GET'])
+@ app.route('/', methods=['GET'])
 def get_index_page():
     return render_template(
         "index.html"
     )
 
 
-@app.route('/collections', methods=['GET'])
+@ app.route('/collections', methods=['GET'])
 def get_collections_page():
     return render_template(
         "collections.html"
     )
 
 
-@app.route('/users', methods=['GET'])
-@role_required("owner", "admin")
+@ app.route('/users', methods=['GET'])
+@ role_required("owner", "admin")
 def get_users_page():
     return render_template(
         "users.html"
     )
 
 
-@app.route('/profile', methods=['GET'])
+@ app.route('/profile', methods=['GET'])
 def get_profile_page():
     return render_template(
         "profile.html"
     )
 
 
-@app.route('/statistics', methods=['GET'])
+@ app.route('/statistics', methods=['GET'])
 def get_statistics_page():
     return render_template(
         "statistics.html"
     )
 
 
-@app.route('/api/users', methods=['GET'])
-@role_required("owner", "admin")
+@ app.route('/api/users', methods=['GET'])
+@ role_required("owner", "admin")
 def get_users():
     users = list(users_collection.find({}))
     for user in users:
@@ -99,22 +114,21 @@ def get_users():
     return jsonify(users)
 
 
-@app.route('/api/password/<login>', methods=['GET'])
+@ app.route('/api/password/<login>', methods=['GET'])
 def get_users_password(login):
-    print(request)
     user = users_collection.find_one({"login": login})
     return jsonify(user['password'])
 
 
-@app.route('/api/users/<id>', methods=['DELETE'])
-@role_required("owner", "admin")
+@ app.route('/api/users/<id>', methods=['DELETE'])
+@ role_required("owner", "admin")
 def delete_user(id):
     users_collection.delete_one({'_id': ObjectId(id)})
     return redirect(url_for('get_users'))
 
 
-@app.route('/api/users/<user_id>/role', methods=['PUT'])
-@role_required("admin", "owner")
+@ app.route('/api/users/<user_id>/role', methods=['PUT'])
+@ role_required("admin", "owner")
 def update_user_role(user_id):
     if 'username' not in request.cookies:
         return jsonify({"message": "Unauthorized access"}), 401
@@ -137,7 +151,7 @@ def update_user_role(user_id):
     return jsonify({"message": "Role updated successfully"}), 200
 
 
-@app.route('/authorize/login', methods=['POST', 'GET'])
+@ app.route('/authorize/login', methods=['POST', 'GET'])
 def login():
     login = request.form['login']
     password = request.form['password']
@@ -149,10 +163,12 @@ def login():
     return response, 200
 
 
-@app.route('/authorize/signup', methods=['POST'])
+@ app.route('/authorize/signup', methods=['POST'])
 def signup():
     login = request.form.get("login")
     password = request.form.get("password")
+
+    who = request.form.get("who")
     name = request.form.get("name")
     city = request.form.get("city")
     address = request.form.get("address")
@@ -163,32 +179,43 @@ def signup():
     if existing_user:
         return jsonify({"success": False, "message": "User with this username already exists."}), 409
 
-    if photo and allowed_file(photo.filename):
-        filename = secure_filename(photo.filename)
-        photo_path = os.path.join('static/images/dealers', filename)
-        photo.save(photo_path)
-    else:
-        return jsonify({"success": False, "message": "Invalid photo format."}), 400
-
     role = "user"
-    if users_collection.count_documents({}) == 0:
+    if users_collection.count_documents({"role": "owner"}) == 0:
         role = "owner"
 
     users_collection.insert_one({
         "login": login,
         "password": password,
-        "role": role,
-        "name": name,
-        "city": city,
-        "address": address,
-        "phone": phone,
-        "photo": filename
+        "role": role
     })
-
+    current_user = users_collection.find_one({"login": login})
+    if who == "dealer":
+        if photo and allowed_file(photo.filename):
+            filename = secure_filename(photo.filename)
+            photo_path = os.path.join('static/images/dealers', filename)
+            photo.save(photo_path)
+        else:
+            return jsonify({"success": False, "message": "Invalid photo format."}), 400
+        dealers_collection.insert_one({
+            "user_id": current_user["_id"],
+            "name": name,
+            "photo": filename,
+            "address": address,
+        }
+        )
+    else:
+        clients_collection.insert_one({
+            "user_id": current_user["_id"],
+            "name": name,
+            "city": city,
+            "address": address,
+            "phone": phone
+        }
+        )
     return jsonify({"success": True, "login": login, "role": role})
 
 
-@app.route('/api/cars', methods=['GET'])
+@ app.route('/api/cars', methods=['GET'])
 def get_cars():
     if (get_current_user() != None):
         notlogin = get_current_user()["login"]
@@ -201,7 +228,7 @@ def get_cars():
     return jsonify(cars)
 
 
-@app.route('/api/cars', methods=['POST'])
+@ app.route('/api/cars', methods=['POST'])
 def add_car():
     brand = request.form['brand']
     model = request.form['model']
@@ -245,7 +272,7 @@ def add_car():
     return jsonify({'message': 'Car added successfully!'}), 200
 
 
-@app.route('/api/cars/filter', methods=['POST'])
+@ app.route('/api/cars/filter', methods=['POST'])
 def filter_cars():
     data = request.get_json()
     filters = {}
@@ -289,7 +316,7 @@ def filter_cars():
     return jsonify(cars), 200
 
 
-@app.route('/api/cars/data', methods=['GET'])
+@ app.route('/api/cars/data', methods=['GET'])
 def get_car_data():
     brands = cars_collection.distinct('brand')
 
@@ -298,15 +325,14 @@ def get_car_data():
     return jsonify({'brands': brands, 'years': years}), 200
 
 
-@app.route('/api/cars/<id>', methods=['DELETE'])
-@role_required("owner", "admin")
+@ app.route('/api/cars/<id>', methods=['DELETE'])
+@ role_required("owner", "admin")
 def delete_car(id):
     cars_collection.delete_one({'_id': ObjectId(id)})
     return get_cars()
 
 
-@app.route('/api/collections', methods=['GET'])
-@role_required("owner", "admin", "operator")
+@ app.route('/api/collections', methods=['GET'])
 def get_collections():
     collections_info = {}
     collection_names = db.list_collection_names()
@@ -317,44 +343,28 @@ def get_collections():
     return jsonify(collections_info)
 
 
-@app.route('/api/collections/<name>', methods=['GET'])
-@role_required("owner", "admin", "operator")
+@ app.route('/api/collections/<name>', methods=['GET'])
+@ role_required("owner", "admin", "operator")
 def get_collection(name):
     if name not in db.list_collection_names():
         return jsonify({"error": "Collection not found"}), 404
 
-    collection = db[name]
-    documents = list(collection.find())
-
-    fields = set()
-    for doc in documents:
-        fields.update(doc.keys())
-        for key in doc.keys():
-            doc[key] = str(doc[key])
-    if name in ["Keys", "clients", "dealers"]:
-        fields.remove('password')
-        for doc in documents:
-            doc['password'] = ""
-
-    response = {
-        "collection_name": name,
-        "fields": list(fields),
-        "documents": documents
-    }
+    collection = list(db[name].find({}))
+    response = get_collection_info(collection, name)
 
     return jsonify(response), 200
 
 
-@app.route('/api/collections/<name>', methods=['DELETE'])
-@role_required("owner")
+@ app.route('/api/collections/<name>', methods=['DELETE'])
+@ role_required("owner")
 def delete_collection(name):
     db[name].drop()
     collection_names = db.list_collection_names()
     return jsonify(collection_names), 200
 
 
-@app.route('/api/collections/<name>', methods=['POST'])
-@role_required("owner")
+@ app.route('/api/collections/<name>', methods=['POST'])
+@ role_required("owner")
 def create_collection(name):
     try:
 
@@ -368,15 +378,15 @@ def create_collection(name):
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/collections/document/delete/<collection_name>/<document_id>', methods=['DELETE'])
-@role_required("owner", "admin")
+@ app.route('/api/collections/document/delete/<collection_name>/<document_id>', methods=['DELETE'])
+@ role_required("owner", "admin")
 def delete_document(collection_name, document_id):
     db[collection_name].delete_one({"_id": ObjectId(document_id)})
     return jsonify({"message": "Document deleted successfully"}), 200
 
 
-@app.route('/api/collections/document/update/<collection_name>/<document_id>', methods=['PUT'])
-@role_required("owner", "admin")
+@ app.route('/api/collections/document/update/<collection_name>/<document_id>', methods=['PUT'])
+@ role_required("owner", "admin")
 def update_document(collection_name, document_id):
     updated_data = request.json
     db[collection_name].update_one(
@@ -384,25 +394,39 @@ def update_document(collection_name, document_id):
     return jsonify({"message": "Document updated successfully"}), 200
 
 
-@app.route('/api/collections/column/delete/<collection_name>/<column_name>', methods=['DELETE'])
-@role_required("owner", "admin")
+@ app.route('/api/collections/column/<collection_name>/<column_name>', methods=['DELETE'])
+@ role_required("owner", "admin")
 def delete_column(collection_name, column_name):
+    print(column_name)
     db[collection_name].update_many({}, {"$unset": {column_name: ""}})
     return jsonify({"message": "Column deleted successfully"}), 200
 
 
-@app.route('/api/collection/add-column/<collection_name>/<column_name>', methods=['POST'])
-@role_required("owner", "admin")
-def add_column(collection_name, column_name):
+@ app.route('/api/collection/add-column/<collection_name>/<column_name>/<column_type>', methods=['POST'])
+@ role_required("owner", "admin")
+def add_column(collection_name, column_name, column_type):
     if not column_name:
         return jsonify({"error": "Column name is required"}), 400
 
-    db[collection_name].update_many({}, {"$set": {column_name: ""}})
+    if not column_name:
+        return jsonify({"error": "Column name is required"}), 400
+    default_value = ""
+    if column_type == "string":
+        default_value = ""
+    elif column_type == "int":
+        default_value = 0
+    elif column_type == "float":
+        default_value = 0.0
+    elif column_type == "boolean":
+        default_value = False
+    else:
+        return jsonify({"error": "Unsupported column type"}), 400
+    db[collection_name].update_many({}, {"$set": {column_name: default_value}})
     return jsonify({"message": "Column added successfully"}), 200
 
 
-@app.route('/api/collection/add-document/<collection_name>', methods=['POST'])
-@role_required("owner", "admin", "operator")
+@ app.route('/api/collection/add-document/<collection_name>', methods=['POST'])
+@ role_required("owner", "admin", "operator")
 def add_document(collection_name):
     data = request.get_json()
 
@@ -413,7 +437,7 @@ def add_document(collection_name):
         return jsonify({"error": "Failed to add document"}), 500
 
 
-@app.route('/api/orders', methods=['POST'])
+@ app.route('/api/orders', methods=['POST'])
 def create_order():
     if 'username' not in request.cookies:
         return jsonify({"error": "Unauthorized"}), 401
@@ -461,7 +485,7 @@ def create_order():
     return jsonify({"success": True, "message": "Order placed successfully!"}), 201
 
 
-@app.route('/api/collections/clients/multiple-purchases', methods=['GET'])
+@ app.route('/api/collections/clients/multiple-purchases', methods=['GET'])
 def get_clients_with_multiple_purchases():
     pipeline = [
         {
@@ -492,28 +516,12 @@ def get_clients_with_multiple_purchases():
     ]
 
     clients = list(clients_collection.aggregate(pipeline))
-
-    fields = set()
-
-    for doc in clients:
-        fields.update(doc.keys())
-        for key in doc.keys():
-            doc[key] = str(doc[key])
-
-    if 'password' in fields:
-        fields.remove('password')
-    for doc in clients:
-        doc['password'] = ""
-
-    response = {
-        "fields": list(fields),
-        "documents": clients
-    }
+    response = get_collection_info(clients, "clients")
 
     return jsonify(response), 200
 
 
-@app.route('/api/dealers/top', methods=['GET'])
+@ app.route('/api/dealers/top', methods=['GET'])
 def get_top_dealers():
     pipeline = [
         {"$group": {"_id": {"dealer": "$dealer_id"}, "count": {"$sum": 1}}},
@@ -541,21 +549,11 @@ def get_top_dealers():
     ]
 
     dealers = list(contracts_collection.aggregate(pipeline))
-    fields = set()
-
-    for doc in dealers:
-        fields.update(doc.keys())
-        for key in doc.keys():
-            if isinstance(doc[key], ObjectId):
-                doc[key] = str(doc[key])
-    response = {
-        "fields": list(fields),
-        "documents": dealers
-    }
+    response = get_collection_info(dealers, "dealers")
     return jsonify(response), 200
 
 
-@app.route('/api/contracts/credit', methods=['GET'])
+@ app.route('/api/contracts/credit', methods=['GET'])
 def get_credit_contracts():
     contracts = list(contracts_collection.find({"payment_type": "credit"}))
     fields = set()
@@ -571,7 +569,7 @@ def get_credit_contracts():
     return jsonify(response), 200
 
 
-@app.route('/api/clients/late-payments', methods=['GET'])
+@ app.route('/api/clients/late-payments', methods=['GET'])
 def get_clients_with_late_payments():
     pipeline = [
         {"$lookup": {
@@ -607,7 +605,7 @@ def get_clients_with_late_payments():
     return jsonify(response), 200
 
 
-@app.route('/api/cars/previous-owners', methods=['GET'])
+@ app.route('/api/cars/previous-owners', methods=['GET'])
 def get_previous_owners():
     pipeline = [
         {"$lookup": {
@@ -639,7 +637,7 @@ def get_previous_owners():
     return jsonify(response), 200
 
 
-@app.route('/api/contracts/by-date', methods=['GET'])
+@ app.route('/api/contracts/by-date', methods=['GET'])
 def get_contracts_by_date():
     pipeline = [
         {"$sort": {"date": 1}}
@@ -661,7 +659,7 @@ def get_contracts_by_date():
     return jsonify(response), 200
 
 
-@app.route('/api/clients-cars/payment', methods=['GET'])
+@ app.route('/api/clients-cars/payment', methods=['GET'])
 def get_clients_and_cars_by_payment():
     pipeline = [
         {
@@ -717,7 +715,7 @@ def get_clients_and_cars_by_payment():
     return jsonify(response), 200
 
 
-@app.route('/api/contracts/per-client', methods=['GET'])
+@ app.route('/api/contracts/per-client', methods=['GET'])
 def get_contracts_per_client():
     pipeline = [
         {"$group": {
@@ -754,7 +752,7 @@ def get_contracts_per_client():
     return jsonify(response), 200
 
 
-@app.route('/api/contracts/per-dealer', methods=['GET'])
+@ app.route('/api/contracts/per-dealer', methods=['GET'])
 def get_contracts_per_dealer():
     pipeline = [
         {"$group": {
@@ -791,7 +789,7 @@ def get_contracts_per_dealer():
     return jsonify(response), 200
 
 
-@app.route('/api/sales/sum', methods=['GET'])
+@ app.route('/api/sales/sum', methods=['GET'])
 def get_sales_summary():
     pipeline = [
         {"$match": {"sold": True}},
@@ -818,16 +816,17 @@ def get_sales_summary():
     return jsonify(response), 200
 
 
-@app.route('/api/pages', methods=['GET'])
+@ app.route('/api/pages', methods=['GET'])
 def get_pages():
     pages = {'/': 'Головна', 'profile': 'Профіль', 'statistics': 'Статистика'}
+    pages['collections'] = 'Колекції'
     user = get_current_user()
     if (user == None):
         return jsonify(pages), 200
     role = user['role']
     if (role == 'admin' or role == 'owner'):
         pages['users'] = 'Користувачі'
-        pages['collections'] = 'Колекції'
+
     return jsonify(pages), 200
 
 

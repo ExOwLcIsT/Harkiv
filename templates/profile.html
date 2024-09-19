@@ -8,9 +8,9 @@
     <link href="../static/css/profile.css" rel="stylesheet">
     <link href="../static/css/navbar.css" rel="stylesheet">
     <link href="../static/css/forms.css" rel="stylesheet">
+    <script src="../static/js/nav-links.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
     <script src="../static/js/login.js"></script>
-    <script src="../static/js/nav-links.js"></script>
 </head>
 
 <body>
@@ -34,17 +34,21 @@
         <form id="loginform" class="auth" onsubmit="login(event)">
             <input class="forminput" id="loginusername" placeholder="username" required>
             <input class="forminput" id="loginpassword" placeholder="password" type="password" required>
-            <div class="additional"><button onclick="forgotPassword()">forgot password?</button></div>
+            <div class="additional"><input type="button" onclick="forgotPassword()" value="forgot password?" width="300px"></button>
+            </div>
             <h4 id="forgottenPassword"></h4>
             <input class="forminput" type="submit" value="Log in">
             <input onclick="showsignupform()" class="forminput" type="button" value="Sign up">
         </form>
     </div>
-    <nav class="horizontal-navbar">
-        <a href="/" class="logo">AutoSale</a>
+    <nav class="horizontal-navbar"> 
         <ul class="nav-links" id="nav-links">
 
         </ul>
+        <div class="log">
+            <button onclick="showlogin()" id="showlog">Log in</button>
+            <button onclick="logout()" id="logout">Log out</button>
+        </div>
     </nav>
     <h2 id="username"></h2>
     <div class="form-container">

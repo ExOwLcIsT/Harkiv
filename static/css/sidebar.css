@@ -3,15 +3,16 @@
 }
 
 .sidebar {
+    overflow: scroll;
     width: 300px;
+    height: calc(100vh - 60px);
     padding: 20px;
     background-color: #f4f4f4;
     border-right: 2px solid #ddd;
     margin-left: 0px;
     position: fixed;
     left: 0;
-    top: 0;
-    height: 100%;
+    top: 60px;
 }
 
 .sidebar h2 {
