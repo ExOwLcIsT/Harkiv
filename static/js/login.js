@@ -1,9 +1,37 @@
+let isDealerMode = false;
+
+function toggleMode() {
+    isDealerMode = !isDealerMode;
+    const whoInput = document.getElementById("who");
+    const toggleButton = document.querySelector("button[onclick='toggleMode()']");
+    const clientFields = document.getElementById("clientFields");
+    const dealerFields = document.getElementById("dealerFields");
+
+    if (isDealerMode) {
+        whoInput.value = "dealer";
+        toggleButton.textContent = "Switch to Client Registration";
+        clientFields.style.display = "none";
+        dealerFields.style.display = "block";
+    } else {
+        whoInput.value = "client";
+        toggleButton.textContent = "Switch to Dealer Registration";
+        clientFields.style.display = "block";
+        dealerFields.style.display = "none";
+    }
+}
+
 function deleteCookie(name) {
     document.cookie = name + '=; Max-Age=0; path=/;';
 }
 
 function showlogin() {
     $("#login").css('visibility', 'visible');
+}
+function hidelogin() {
+    $("#signupform").css("visibility", "hidden");
+    $("#logout").css("visibility", "hiiden");
+    $("#showlog").css("visibility", "visible");
+    $("#login").css('visibility', 'hidden ');
 }
 
 function logout() {
@@ -42,7 +70,7 @@ function signup(event) {
             if (response.success) {
                 alert("Registration successful!");
                 document.cookie = `username=${response.login}; path=/;`;
-                $("signupform").css("visibility", "hidden");
+                $("#signupform").css("visibility", "hidden");
                 $("#logout").css("visibility", "visible");
                 $("#showlog").css("visibility", "hidden");
                 $("#login").css('visibility', 'hidden ');

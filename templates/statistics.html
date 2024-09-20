@@ -55,6 +55,7 @@
         }
 
         function fillResult(data) {
+            console.log(data)
             $("#result-head").html("");
             $("#result-body").html("");
             if (!(Array.isArray(data.documents)) || data.documents.length === 0) {
@@ -63,27 +64,19 @@
             }
             $("#result-head").html("");
             $("#result-head").html("<tr>");
-            if (data.fields.includes("_id"))
-                $("#result-head").append("<th>_id</th>");
-            data.fields.forEach(element => {
-                if (element !== "_id") {
-                    $("#result-head").append("<th>" + element + "</th>");
-                }
+            data.fields.forEach(key => {
+                $("#result-head").append("<th>" + key + "</th>");
             });
+
             $("#result-head").append("</tr>");
 
             data.documents.forEach(document => {
                 $("#result-body").append("<tr>");
+                data.fields.forEach(key => {
+                    $("#result-body").append(
+                        `<td>${document[key] !== undefined ? document[key] : ''}</td>`
+                    );
 
-                $("#result-body").append(
-                    document['_id'] !== undefined ? `<td>${document["_id"]}</td>` : ''
-                );
-                data.fields.forEach(field => {
-                    if (field !== "_id") {
-                        $("#result-body").append(
-                            `<td>${document[field] !== undefined ? document[field] : ''}</td>`
-                        );
-                    }
                 });
                 $("#result-body").append("</tr>");
             });
@@ -94,7 +87,7 @@
                 url: "/api/collections/clients",
                 type: "GET",
                 success: function (response) {
-                    console.log(response)
+                    response.fields = Object.keys(response.fields);
                     fillResult(response)
                 },
                 error: function (xhr, status, error) {
@@ -108,7 +101,7 @@
                 url: "/api/collections/clients/multiple-purchases",
                 type: "GET",
                 success: function (response) {
-                    console.log(response)
+                    response.fields = Object.keys(response.fields);
                     fillResult(response)
                 },
                 error: function (xhr, status, error) {
@@ -122,7 +115,7 @@
                 url: "/api/dealers/top",
                 type: "GET",
                 success: function (response) {
-                    console.log(response)
+                    response.fields = Object.keys(response.fields);
                     fillResult(response)
                 },
                 error: function (xhr, status, error) {
@@ -136,7 +129,6 @@
                 url: "/api/contracts/credit",
                 type: "GET",
                 success: function (response) {
-                    console.log(response)
                     fillResult(response)
                 },
                 error: function (xhr, status, error) {
@@ -150,7 +142,6 @@
                 url: "/api/clients/late-payments",
                 type: "GET",
                 success: function (response) {
-                    console.log(response);
                     fillResult(response);
                 },
                 error: function (xhr, status, error) {
@@ -164,7 +155,7 @@
                 url: "/api/collections/dealers",
                 type: "GET",
                 success: function (response) {
-                    console.log(response);
+                    response.fields = Object.keys(response.fields);
                     fillResult(response);
                 },
                 error: function (xhr, status, error) {
@@ -178,7 +169,6 @@
                 url: "/api/contracts/by-date",
                 type: "GET",
                 success: function (response) {
-                    console.log(response);
                     fillResult(response);
                 },
                 error: function (xhr, status, error) {
@@ -192,7 +182,6 @@
                 url: "/api/clients-cars/payment",
                 type: "GET",
                 success: function (response) {
-                    console.log(response);
                     fillResult(response);
                 },
                 error: function (xhr, status, error) {
@@ -206,7 +195,6 @@
                 url: "/api/contracts/per-client",
                 type: "GET",
                 success: function (response) {
-                    console.log(response);
                     fillResult(response);
                 },
                 error: function (xhr, status, error) {
@@ -220,7 +208,6 @@
                 url: "/api/contracts/per-dealer",
                 type: "GET",
                 success: function (response) {
-                    console.log(response);
                     fillResult(response);
                 },
                 error: function (xhr, status, error) {
@@ -234,7 +221,6 @@
                 url: "/api/sales/sum",
                 type: "GET",
                 success: function (response) {
-                    console.log(response);
                     fillResult(response);
                     let sum = 0;
                     response.documents.forEach(element => {

@@ -40,13 +40,13 @@
 
             <!-- Client-specific fields -->
             <div id="clientFields">
-                <input class="forminput" id="city" name="city" placeholder="Місто" >
+                <input class="forminput" id="city" name="city" placeholder="Місто">
             </div>
 
             <!-- Dealer-specific fields -->
             <div id="dealerFields" style="display: none;">
                 <label for="photo">Фото</label><br>
-                <input class="forminput" id="photo" name="photo" type="file" accept="image/*" >
+                <input class="forminput" id="photo" name="photo" type="file" accept="image/*">
             </div>
 
             <!-- Submit and toggle buttons -->
@@ -54,16 +54,18 @@
             <input onclick="showloginform()" class="forminput" type="button" value="Log in">
             <button type="button" onclick="toggleMode()">Switch to Dealer Registration</button>
         </form>
+
         <form id="loginform" class="auth" onsubmit="login(event)">
             <input class="forminput" id="loginusername" placeholder="username" required>
             <input class="forminput" id="loginpassword" placeholder="password" type="password" required>
-            <div class="additional"><input type="button" onclick="forgotPassword(event)" value="forgot password?"
-                    width="100px"></button>
+            <div class="additional">
+                <input type="button" onclick="forgotPassword(event)" value="forgot password?" width="100px"></button>
             </div>
             <h4 id="forgottenPassword"></h4>
             <input class="forminput" type="submit" value="Log in">
             <input onclick="showsignupform()" class="forminput" type="button" value="Sign up">
         </form>
+        <input type="button" class="close-btn" onclick="hidelogin()" value="X">
     </div>
 
     <div class="header">
@@ -109,27 +111,6 @@
 
 
     <script>
-        let isDealerMode = false;
-
-        function toggleMode() {
-            isDealerMode = !isDealerMode;
-            const whoInput = document.getElementById("who");
-            const toggleButton = document.querySelector("button[onclick='toggleMode()']");
-            const clientFields = document.getElementById("clientFields");
-            const dealerFields = document.getElementById("dealerFields");
-
-            if (isDealerMode) {
-                whoInput.value = "dealer";
-                toggleButton.textContent = "Switch to Client Registration";
-                clientFields.style.display = "none";
-                dealerFields.style.display = "block";
-            } else {
-                whoInput.value = "client";
-                toggleButton.textContent = "Switch to Dealer Registration";
-                clientFields.style.display = "block";
-                dealerFields.style.display = "none";
-            }
-        }
         window.onload = () => {
             fillNav();
             if (document.cookie.includes("username")) {
@@ -220,10 +201,25 @@
             });
         }
 
-        function fillContainer(data) {
+        function ajaxIsDealer() {
+            return new Promise((resolve, reject) => {
+                $.ajax({
+                    url: '/api/isdealer',
+                    type: 'GET',
+                    success: resolve,
+                    error: reject
+                });
+            });
+        }
+
+        async function fillContainer(data) {
+            console.log(data)
+            let result = await ajaxIsDealer();
+            let is_dealer = result.dealer;
+
             $("#carscontainer").html("");
             data.forEach(element => {
-                $("#carscontainer").append(`
+                appendElement = `
                       <div class="car-card">
             <img src="${element.photo}" alt="Car Image">
             <div class="car-card-content">
@@ -235,10 +231,15 @@
                     <span>Color: ${element.color}</span>
                 </div>
                 <p>${element.description}</p>
-                <div class="price">$${element.price}</div>
-                <button onClick='createOrder("${element._id}")'>Придбати</button>
+                <div class="price">$${element.price}</div>`;
+                if (!is_dealer) {
+                    appendElement +=
+                        `<button onClick='createOrder("${element._id}")'>Придбати</button>`;
+                }
+                appendElement += `
             </div>
-        </div>`);
+        </div>`
+                $("#carscontainer").append(appendElement);
             });
         }
 

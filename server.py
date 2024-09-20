@@ -17,7 +17,7 @@ dealers_collection = db['dealers']
 contracts_collection = db['contracts']
 cars_collection = db['cars']
 
-UPLOAD_FOLDER = 'static/images/cars'
+UPLOAD_FOLDER = './static/images/cars'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -67,6 +67,17 @@ def role_required(*roles):
                 return jsonify({"error": "Unauthorized access"}), 403
         return decorated_function
     return decorator
+
+
+@app.route('/api/isdealer', methods=["GET"])
+def isDealer():
+    user = get_current_user()
+    if user is None:
+        return False
+    dealer = dealers_collection.find_one({"user_id": user["_id"]})
+    print("here")
+    print(dealer != None)
+    return {"dealer": dealer != None}
 
 
 @ app.route('/', methods=['GET'])
@@ -192,7 +203,8 @@ def signup():
     if who == "dealer":
         if photo and allowed_file(photo.filename):
             filename = secure_filename(photo.filename)
-            photo_path = os.path.join('static/images/dealers', filename)
+            photo_path = os.path.join('./static/images/dealers', filename)
+            os.makedirs('./static/images/dealers', exist_ok=True)
             photo.save(photo_path)
         else:
             return jsonify({"success": False, "message": "Invalid photo format."}), 400
@@ -217,14 +229,17 @@ def signup():
 
 @ app.route('/api/cars', methods=['GET'])
 def get_cars():
-    if (get_current_user() != None):
-        notlogin = get_current_user()["login"]
-    else:
-        notlogin = ""
-    cars = list(cars_collection.find(
-        {"sold": False, "dealer": {"$ne": notlogin}}))
+    cars = []
+    user = get_current_user()
+    if (user != None):
+        if (isDealer()["dealer"]):
+            dealer = dealers_collection.find_one({"user_id": user["_id"]})
+            cars = list(cars_collection.find({"dealer_id": dealer["_id"]}))
+        else:
+            cars = list((cars_collection.find({"sold": False})))
     for car in cars:
         car['_id'] = str(car['_id'])
+        car['dealer_id'] = str(car['dealer_id'])
     return jsonify(cars)
 
 
@@ -235,24 +250,20 @@ def add_car():
     year = int(request.form['year'])
     mileage = int(request.form['mileage'])
     price = float(request.form['price'])
-    notes = request.form['notes'],
-    color = request.form['color'],
-    dealer = request.form['dealer']
+    notes = request.form['notes']
+    color = request.form['color']
     photo = request.files['photo']
-
+    dealer_id = dealers_collection.find_one(
+        {"user_id": get_current_user()['_id']})["_id"]
     if 'photo' not in request.files:
         return jsonify({'error': 'No photo uploaded'}), 400
 
     if photo.filename == '':
         return jsonify({'error': 'No selected file'}), 400
 
-    # This gives the directory of your current script
-    base_dir = os.path.abspath(os.path.dirname(__file__))
-    # Ensure this is a writable folder
-    upload_folder = os.path.join(base_dir, 'uploads')
-    file_path = os.path.join(upload_folder, photo.filename)
+    file_path = os.path.join(UPLOAD_FOLDER, photo.filename)
 
-    os.makedirs(upload_folder, exist_ok=True)
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     photo.save(file_path)
     car_data = {
         'brand': brand,
@@ -263,7 +274,7 @@ def add_car():
         'price': price,
         'photo': file_path,
         'description': notes,
-        'dealer': dealer,
+        'dealer_id': dealer_id,
         'sold': False
     }
 
@@ -309,10 +320,22 @@ def filter_cars():
             sort_criteria.append(('mileage', -1))
 
     cars = list(cars_collection.find(filters).sort(sort_criteria))
+    print(cars.__len__())
 
+    user = get_current_user()
+    if (user != None):
+        if (isDealer()["dealer"]):
+            dealer = dealers_collection.find_one({"user_id": user["_id"]})
+            cars = list(filter(
+                lambda car: car["dealer_id"] != dealer["_id"], cars))
+        else:
+            cars = list(filter(
+                lambda car: car["sold"] == False, cars))
     for car in cars:
         car['_id'] = str(car['_id'])
+        car['dealer_id'] = str(car['dealer_id'])
 
+    print(cars)
     return jsonify(cars), 200
 
 
@@ -344,7 +367,6 @@ def get_collections():
 
 
 @ app.route('/api/collections/<name>', methods=['GET'])
-@ role_required("owner", "admin", "operator")
 def get_collection(name):
     if name not in db.list_collection_names():
         return jsonify({"error": "Collection not found"}), 404
@@ -439,38 +461,38 @@ def add_document(collection_name):
 
 @ app.route('/api/orders', methods=['POST'])
 def create_order():
-    if 'username' not in request.cookies:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    user_login = request.cookies.get('username')
-    user = users_collection.find_one({"login": user_login})
+    user = get_current_user()
 
     if not user:
         return jsonify({"error": "User not found"}), 404
 
     data = request.json
     car_id = data.get('car_id')
-    comment = data.get('comment')
 
     car = cars_collection.find_one({"_id": ObjectId(car_id)})
     if not car:
         return jsonify({"error": "Car not found"}), 404
+    if isDealer()["dealer"]:
+        return jsonify({"error": "Dealer can`t buy car"}), 404
 
-    dealer = users_collection.find_one({"login": car.get('dealer')})
     payment_type = random.choice(["credit", "cash", "other"])
+    client = clients_collection.find_one({"user_id": user["_id"]})
+    print(get_current_user()["_id"])
+    print(client)
+    client_id = client["_id"]
+    print(client_id)
     contract_data = {
         "contract_code": str(ObjectId()),
-        "client_id": user['_id'],
-        "dealer_id": dealer.get("_id"),
+        "client_id": client_id,
+        "dealer_id": car.get("dealer_id"),
         "contract_date": datetime.now().isoformat(),
         "car_id": car['_id'],
         "car_brand": car['brand'],
         "car_photo": car['photo'],
         "car_year": car['year'],
         "car_mileage": car['mileage'],
-        "sale_date": None,
+        "sale_date": datetime.now().isoformat(),
         "sale_price": car['price'],
-        "note": comment,
         "payment_type": payment_type,
         "outdated": random.choice([True, False]),
     }
@@ -478,10 +500,6 @@ def create_order():
     contracts_collection.insert_one(contract_data)
     cars_collection.update_one({"_id": ObjectId(car_id)}, {
                                "$set": {"sold": True}})
-    if dealers_collection.find_one({"_id": dealer["_id"]}) == None:
-        dealers_collection.insert_one(dealer)
-    if clients_collection.find_one({"_id": get_current_user()["_id"]}) == None:
-        clients_collection.insert_one(get_current_user())
     return jsonify({"success": True, "message": "Order placed successfully!"}), 201
 
 
@@ -818,11 +836,13 @@ def get_sales_summary():
 
 @ app.route('/api/pages', methods=['GET'])
 def get_pages():
-    pages = {'/': 'Головна', 'profile': 'Профіль', 'statistics': 'Статистика'}
+    pages = {'/': 'Головна', 'statistics': 'Статистика'}
     pages['collections'] = 'Колекції'
     user = get_current_user()
     if (user == None):
         return jsonify(pages), 200
+    if isDealer()["dealer"]:
+        pages['profile'] = 'Профіль'
     role = user['role']
     if (role == 'admin' or role == 'owner'):
         pages['users'] = 'Користувачі'

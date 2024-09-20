@@ -72,3 +72,9 @@
 #logout:hover {
     background-color: #116a5b;
 }
+.close-btn
+{
+    width: 30px;
+    height: 30px;
+    margin: 20px;
+}

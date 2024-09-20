@@ -160,7 +160,6 @@
                         $("#viewbody").append(`<td>${document['_id']}</td>`);
 
                         for (const [key, field] of Object.entries(data.fields)) {
-                            console.log(key, field)
                             if (!(key === "_id")) {
                                 if (!key.includes("_id") && key != "role") {
                                     let inputType = "";
