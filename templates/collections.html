@@ -14,28 +14,28 @@
 <body>
     <nav class="horizontal-navbar">
         <ul class="nav-links" id="nav-links">
-
         </ul>
     </nav>
     <div class="container">
-        <h1>Database collection Management</h1>
+        <h1>Управління колекціями бази даних</h1>
 
         <div class="actions">
-            <input id="createcollection">
-            <button onclick="createcollection()">Create collection</button>
+            <input id="createcollection" placeholder="Назва колекції">
+            <button onclick="createcollection()">Створити колекцію</button>
         </div>
 
         <table class="collection-management">
             <thead>
                 <tr>
-                    <th>Collection Name</th>
-                    <th>Number of Documents</th>
-                    <th>Actions</th>
+                    <th>Назва колекції</th>
+                    <th>Кількість документів</th>
+                    <th>Дії</th>
                 </tr>
             </thead>
             <tbody id="tbody">
             </tbody>
         </table>
+
         <div id="collection">
             <h2 id="collname"></h2>
             <table class="view-collection">
@@ -195,8 +195,8 @@
 
                         $("#viewbody").append(`
                     <td>
-                        <button onclick="deleteRow('${data.collection_name}', '${document['_id']}')">delete</button>
-                        <button onclick="updateRow('${data.collection_name}', '${document['_id']}', getRowData('${document['_id']}'))">update</button>
+                        <button onclick="deleteRow('${data.collection_name}', '${document['_id']}')">видалити</button>
+                        <button onclick="updateRow('${data.collection_name}', '${document['_id']}', getRowData('${document['_id']}'))">Оновити</button>
                     </td>
                 `);
                         $("#viewbody").append("</tr>");
@@ -232,7 +232,7 @@
                         }
                     };
                     addRow +=
-                        `<td><button onclick="saveNewRow('${collectionName}')">Add</button></td></tr>`;
+                        `<td><button onclick="saveNewRow('${collectionName}')">Додати</button></td></tr>`;
                     $(
                         "#viewbody").append(addRow);
                 },
@@ -378,15 +378,15 @@
                     <td>${key}</td>
                     <td>${value}</td>
                     <td>
-                        <button onclick="viewcollection('${key}')">View</button>
-                        <button onclick="deletecollection('${key}')">Delete</button>
+                        <button onclick="viewcollection('${key}')">Переглянути</button>
+                        <button onclick="deletecollection('${key}')">Видалити</button>
                     </td>
                 </tr>
         `);
                     };
                 },
                 error: function (error) {
-                    alert("error: " + JSON.stringify(error));
+                    alert("Помилка: " + JSON.stringify(error));
                 }
             });
         }

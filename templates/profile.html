@@ -17,10 +17,10 @@
 
     <div id="login">
         <form id="signupform" class="auth" onsubmit="signup(event)" enctype="multipart/form-data">
-            <!-- Hidden field to store whether it is for 'client' or 'dealer' -->
+            <!-- Приховане поле для збереження інформації про те, 'клієнт' або 'дилер' -->
             <input type="hidden" id="who" name="who" value="client">
 
-            <!-- Login and password fields (common for both) -->
+            <!-- Поля для логіна та пароля (загальні для обох) -->
             <input class="forminput" id="signupusername" name="login" placeholder="Логін" required>
             <input class="forminput" id="signuppassword" name="password" type="password" placeholder="Пароль" required>
             <input class="forminput" id="confirmpassword" type="password" placeholder="Підтвердити пароль" required>
@@ -28,87 +28,90 @@
             <input class="forminput" id="name" name="name" placeholder="ПІБ" required>
             <input class="forminput" id="address" name="address" placeholder="Адреса" required>
 
-            <!-- Client-specific fields -->
+            <!-- Поля для клієнта -->
             <div id="clientFields">
                 <input class="forminput" id="city" name="city" placeholder="Місто">
             </div>
 
-            <!-- Dealer-specific fields -->
+            <!-- Поля для дилера -->
             <div id="dealerFields" style="display: none;">
                 <label for="photo">Фото</label><br>
                 <input class="forminput" id="photo" name="photo" type="file" accept="image/*">
             </div>
 
-            <!-- Submit and toggle buttons -->
-            <input class="forminput" type="submit" value="Sign up">
-            <input onclick="showloginform()" class="forminput" type="button" value="Log in">
-            <button type="button" onclick="toggleMode()">Switch to Dealer Registration</button>
-            <button type="button" onclick="closeForm()">Close</button> <!-- Close button -->
+            <!-- Кнопки для відправки і перемикання -->
+            <input class="forminput" type="submit" value="Зареєструватися">
+            <input onclick="showloginform()" class="forminput" type="button" value="Увійти">
+            <button type="button" onclick="toggleMode()">Переключити на реєстрацію дилера</button>
+            <button type="button" onclick="closeForm()">Закрити</button> <!-- Кнопка закриття -->
         </form>
 
         <form id="loginform" class="auth" onsubmit="login(event)">
-            <input class="forminput" id="loginusername" placeholder="username" required>
-            <input class="forminput" id="loginpassword" placeholder="password" type="password" required>
+            <input class="forminput" id="loginusername" placeholder="Логін" required>
+            <input class="forminput" id="loginpassword" placeholder="Пароль" type="password" required>
             <div class="additional">
-                <input type="button" onclick="forgotPassword(event)" value="forgot password?" width="100px"></button>
+                <input type="button" onclick="forgotPassword(event)" value="Забули пароль?" width="100px"></button>
             </div>
             <h4 id="forgottenPassword"></h4>
-            <input class="forminput" type="submit" value="Log in">
-            <input onclick="showsignupform()" class="forminput" type="button" value="Sign up">
+            <input class="forminput" type="submit" value="Увійти">
+            <input onclick="showsignupform()" class="forminput" type="button" value="Зареєструватися">
         </form>
     </div>
+
     <nav class="horizontal-navbar">
         <ul class="nav-links" id="nav-links">
-
         </ul>
         <div class="log">
-            <button onclick="showlogin()" id="showlog">Log in</button>
-            <button onclick="logout()" id="logout">Log out</button>
+            <button onclick="showlogin()" id="showlog">Увійти</button>
+            <button onclick="logout()" id="logout">Вийти</button>
         </div>
     </nav>
     <h2 id="username"></h2>
+
     <div class="form-container">
-        <h2>Add Car</h2>
+        <h2>Додати автомобіль</h2>
         <form onsubmit="addcar()" method="POST" enctype="multipart/form-data">
             <div>
-                <label for="brand">Car Brand:</label>
+                <label for="brand">Марка автомобіля:</label>
                 <input type="text" id="brand" name="brand" required>
             </div>
 
             <div>
-                <label for="model">Car Model:</label>
+                <label for="model">Модель автомобіля:</label>
                 <input type="text" id="model" name="model" required>
             </div>
 
             <div>
-                <label for="year">Year:</label>
+                <label for="year">Рік:</label>
                 <input type="number" id="year" name="year" min="1886" max="2024" required>
             </div>
 
             <div>
-                <label for="mileage">Mileage (km):</label>
+                <label for="mileage">Пробіг (км):</label>
                 <input type="number" id="mileage" name="mileage" required>
             </div>
 
             <div>
-                <label for="price">Price ($):</label>
+                <label for="price">Ціна ($):</label>
                 <input type="number" id="price" name="price" step="0.01" required>
             </div>
 
             <div>
-                <label for="photo">Car Photo:</label>
+                <label for="photo">Фото автомобіля:</label>
                 <input type="file" id="carphoto" name="photo" accept="image/*" required>
             </div>
 
             <div>
-                <label for="color">Color:</label>
+                <label for="color">Колір:</label>
                 <input id="color" name="color">
             </div>
+
             <div>
-                <label for="notes">Notes:</label>
+                <label for="notes">Примітки:</label>
                 <textarea id="notes" name="notes" rows="4" cols="50"></textarea>
             </div>
-            <button type="submit">Add Car</button>
+
+            <button type="submit">Додати автомобіль</button>
         </form>
     </div>
 
@@ -122,7 +125,7 @@
             } else {
                 $("#logout").css("visibility", "visible");
                 $("#showlog").css("visibility", "hidden");
-                $("#username").html("Welcome, " + document.cookie
+                $("#username").html("Ласкаво просимо, " + document.cookie
                     .split("; ")
                     .find((row) => row.startsWith("username=")).split("=")[1]);
             }

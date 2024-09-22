@@ -14,7 +14,7 @@ db = client['AutoSale']
 users_collection = db['Keys']
 clients_collection = db['clients']
 dealers_collection = db['dealers']
-contracts_collection = db['contracts']
+contracts_collection = db['contracts'] 
 cars_collection = db['cars']
 
 UPLOAD_FOLDER = './static/images/cars'
@@ -55,12 +55,6 @@ def role_required(*roles):
         @ wraps(f)
         def decorated_function(*args, **kwargs):
             user = get_current_user()
-
-            if user:
-                print(f"Current user: {user['login']}, role: {user['role']}")
-            else:
-                print("No user is currently logged in or found.")
-
             if user and user['role'] in roles:
                 return f(*args, **kwargs)
             else:
@@ -75,8 +69,6 @@ def isDealer():
     if user is None:
         return False
     dealer = dealers_collection.find_one({"user_id": user["_id"]})
-    print("here")
-    print(dealer != None)
     return {"dealer": dealer != None}
 
 
@@ -159,7 +151,7 @@ def update_user_role(user_id):
     users_collection.update_one({"_id": ObjectId(user_id)}, {
                                 "$set": {"role": new_role}})
 
-    return jsonify({"message": "Role updated successfully"}), 200
+    return jsonify({"message": "Роль оновлено"}), 200
 
 
 @ app.route('/authorize/login', methods=['POST', 'GET'])
@@ -168,7 +160,7 @@ def login():
     password = request.form['password']
     user = users_collection.find_one({"login": login, "password": password})
     if not user:
-        return jsonify({"error": "Invalid credentials"}), 401
+        return jsonify({"error": "Неправильний логін або пароль"}), 401
     response = jsonify({"login": user['login'], "role": user['role']})
     response.set_cookie('user', user['login'])
     return response, 200
@@ -188,7 +180,7 @@ def signup():
 
     existing_user = users_collection.find_one({"login": login})
     if existing_user:
-        return jsonify({"success": False, "message": "User with this username already exists."}), 409
+        return jsonify({"success": False, "message": "Користувач з таким логіном вже існує."}), 409
 
     role = "user"
     if users_collection.count_documents({"role": "owner"}) == 0:
@@ -256,10 +248,10 @@ def add_car():
     dealer_id = dealers_collection.find_one(
         {"user_id": get_current_user()['_id']})["_id"]
     if 'photo' not in request.files:
-        return jsonify({'error': 'No photo uploaded'}), 400
+        return jsonify({'error': 'Не завантажено фото'}), 400
 
     if photo.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
+        return jsonify({'error': 'Не завантажено фото'}), 400
 
     file_path = os.path.join(UPLOAD_FOLDER, photo.filename)
 
@@ -280,7 +272,7 @@ def add_car():
 
     cars_collection.insert_one(car_data)
 
-    return jsonify({'message': 'Car added successfully!'}), 200
+    return jsonify({'message': 'Машину успішно додано!'}), 200
 
 
 @ app.route('/api/cars/filter', methods=['POST'])
@@ -320,14 +312,13 @@ def filter_cars():
             sort_criteria.append(('mileage', -1))
 
     cars = list(cars_collection.find(filters).sort(sort_criteria))
-    print(cars.__len__())
 
     user = get_current_user()
     if (user != None):
         if (isDealer()["dealer"]):
             dealer = dealers_collection.find_one({"user_id": user["_id"]})
             cars = list(filter(
-                lambda car: car["dealer_id"] != dealer["_id"], cars))
+                lambda car: car["dealer_id"] == dealer["_id"], cars))
         else:
             cars = list(filter(
                 lambda car: car["sold"] == False, cars))
@@ -335,7 +326,6 @@ def filter_cars():
         car['_id'] = str(car['_id'])
         car['dealer_id'] = str(car['dealer_id'])
 
-    print(cars)
     return jsonify(cars), 200
 
 
@@ -369,7 +359,7 @@ def get_collections():
 @ app.route('/api/collections/<name>', methods=['GET'])
 def get_collection(name):
     if name not in db.list_collection_names():
-        return jsonify({"error": "Collection not found"}), 404
+        return jsonify({"error": "Колекцію не знайдено"}), 404
 
     collection = list(db[name].find({}))
     response = get_collection_info(collection, name)
@@ -391,11 +381,11 @@ def create_collection(name):
     try:
 
         if not name:
-            return jsonify({'error': 'Collection name is required'}), 400
+            return jsonify({'error': 'Необхідна назва колекції'}), 400
 
         collection = db[name]
         collection.insert_one({"status": "dummy_data"})
-        return jsonify({'message': f'Collection "{name}" created successfully'}), 201
+        return jsonify({'message': f'Колекція "{name}" успішно створена'}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -404,34 +394,33 @@ def create_collection(name):
 @ role_required("owner", "admin")
 def delete_document(collection_name, document_id):
     db[collection_name].delete_one({"_id": ObjectId(document_id)})
-    return jsonify({"message": "Document deleted successfully"}), 200
+    return jsonify({"message": "Документ успішно видалено"}), 200
 
 
 @ app.route('/api/collections/document/update/<collection_name>/<document_id>', methods=['PUT'])
-@ role_required("owner", "admin")
+@ role_required("owner", "admin", "operator")
 def update_document(collection_name, document_id):
     updated_data = request.json
     db[collection_name].update_one(
         {"_id": ObjectId(document_id)}, {"$set": updated_data})
-    return jsonify({"message": "Document updated successfully"}), 200
+    return jsonify({"message": "Документ успішно оновлено"}), 200
 
 
 @ app.route('/api/collections/column/<collection_name>/<column_name>', methods=['DELETE'])
 @ role_required("owner", "admin")
 def delete_column(collection_name, column_name):
-    print(column_name)
     db[collection_name].update_many({}, {"$unset": {column_name: ""}})
-    return jsonify({"message": "Column deleted successfully"}), 200
+    return jsonify({"message": "Поле успішно видалене"}), 200
 
 
 @ app.route('/api/collection/add-column/<collection_name>/<column_name>/<column_type>', methods=['POST'])
 @ role_required("owner", "admin")
 def add_column(collection_name, column_name, column_type):
-    if not column_name:
-        return jsonify({"error": "Column name is required"}), 400
+    if not column_type:
+        return jsonify({"error": "Необхідний тип поля"}), 400
 
     if not column_name:
-        return jsonify({"error": "Column name is required"}), 400
+        return jsonify({"error": "Необхідна назва поля"}), 400
     default_value = ""
     if column_type == "string":
         default_value = ""
@@ -442,9 +431,9 @@ def add_column(collection_name, column_name, column_type):
     elif column_type == "boolean":
         default_value = False
     else:
-        return jsonify({"error": "Unsupported column type"}), 400
+        return jsonify({"error": "Невизначений тип поля"}), 400
     db[collection_name].update_many({}, {"$set": {column_name: default_value}})
-    return jsonify({"message": "Column added successfully"}), 200
+    return jsonify({"message": "Поле успішно додане"}), 200
 
 
 @ app.route('/api/collection/add-document/<collection_name>', methods=['POST'])
@@ -454,9 +443,9 @@ def add_document(collection_name):
 
     result = db[collection_name].insert_one(data)
     if result.inserted_id:
-        return jsonify({"message": "Document added successfully", "id": str(result.inserted_id)}), 200
+        return jsonify({"message": "Документ успішно додано", "id": str(result.inserted_id)}), 200
     else:
-        return jsonify({"error": "Failed to add document"}), 500
+        return jsonify({"error": "Не вдалося додати документ"}), 500
 
 
 @ app.route('/api/orders', methods=['POST'])
@@ -477,10 +466,7 @@ def create_order():
 
     payment_type = random.choice(["credit", "cash", "other"])
     client = clients_collection.find_one({"user_id": user["_id"]})
-    print(get_current_user()["_id"])
-    print(client)
     client_id = client["_id"]
-    print(client_id)
     contract_data = {
         "contract_code": str(ObjectId()),
         "client_id": client_id,

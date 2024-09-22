@@ -27,10 +27,8 @@
     </nav>
     <div id="login">
         <form id="signupform" class="auth" onsubmit="signup(event)" enctype="multipart/form-data">
-            <!-- Hidden field to store whether it is for 'client' or 'dealer' -->
             <input type="hidden" id="who" name="who" value="client">
 
-            <!-- Login and password fields (common for both) -->
             <input class="forminput" id="signupusername" name="login" placeholder="Логін" required>
             <input class="forminput" id="signuppassword" name="password" type="password" placeholder="Пароль" required>
             <input class="forminput" id="confirmpassword" type="password" placeholder="Підтвердити пароль" required>
@@ -38,18 +36,15 @@
             <input class="forminput" id="name" name="name" placeholder="ПІБ" required>
             <input class="forminput" id="address" name="address" placeholder="Адреса" required>
 
-            <!-- Client-specific fields -->
             <div id="clientFields">
                 <input class="forminput" id="city" name="city" placeholder="Місто">
             </div>
 
-            <!-- Dealer-specific fields -->
             <div id="dealerFields" style="display: none;">
                 <label for="photo">Фото</label><br>
                 <input class="forminput" id="photo" name="photo" type="file" accept="image/*">
             </div>
 
-            <!-- Submit and toggle buttons -->
             <input class="forminput" type="submit" value="Sign up">
             <input onclick="showloginform()" class="forminput" type="button" value="Log in">
             <button type="button" onclick="toggleMode()">Switch to Dealer Registration</button>
@@ -143,7 +138,7 @@
                     brands.forEach(function (brand) {
                         brandCheckboxes += `
                     <label>${brand.charAt(0).toUpperCase() + brand.slice(1)}</label>
-                    <input type="checkbox" name="brand" value="${brand.toLowerCase()}">
+                    <input type="checkbox" name="brand" value="${brand}">
                 `;
                     });
                     $('#brandCheckboxes').append(brandCheckboxes);
@@ -226,11 +221,11 @@
                 <h3>${element.brand}</h3>
                 <h4>${element.model}</h4>
                 <div class="car-details">
-                    <span>Year: ${element.year}</span>
-                    <span>Mileage: ${element.mileage} km</span>
-                    <span>Color: ${element.color}</span>
+                    <span>Рік випуску: ${element.year}</span>
+                    <span>Пробіг: ${element.mileage} km</span>
+                    <span>Колір: ${element.color}</span>
                 </div>
-                <p>${element.description}</p>
+                <p>Опис: ${element.description}</p>
                 <div class="price">$${element.price}</div>`;
                 if (!is_dealer) {
                     appendElement +=
@@ -252,11 +247,11 @@
                     car_id: id
                 }),
                 success: function (response) {
-                    alert('Order placed successfully!');
+                    alert('Контракт успішно створено!');
                     window.location.reload(true);
                 },
-                error: function (xhr) {
-                    alert('Failed to place order: ' + xhr.responseText);
+                error: function () {
+                    alert('Не вдалося створити контракт');
                 }
             });
         }

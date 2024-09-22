@@ -11,6 +11,7 @@
     z-index: 999;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     border-radius: 5px;
+    height: 40px;
 }
 
 .horizontal-navbar .logo {
